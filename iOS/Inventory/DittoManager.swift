@@ -52,12 +52,17 @@ final class DittoManager {
     private init() {}
 
     private func startDitto() -> Ditto {
-        DittoLogger.minimumLogLevel = .verbose
+        DittoLogger.minimumLogLevel = .debug
 
         let ditto = Ditto(identity: .onlinePlayground(appID: Env.APP_ID, token: Env.ONLINE_AUTH_TOKEN, enableDittoCloudSync: false))
 
         do {
+            // Disable sync with V3 Ditto
             try ditto.disableSyncWithV3()
+            // Disable avoid_redundant_bluetooth
+            Task {
+                try await ditto.store.execute(query: "ALTER SYSTEM SET mesh_chooser_avoid_redundant_bluetooth = false")
+            }
             try ditto.startSync()
         } catch {
             let dittoErr = (error as? DittoSwiftError)?.errorDescription

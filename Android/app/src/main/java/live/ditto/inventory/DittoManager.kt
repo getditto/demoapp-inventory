@@ -36,14 +36,17 @@ object DittoManager {
 
 
     /* Internal functions and properties */
-    internal fun startDitto(context: Context) {
-        DittoLogger.minimumLogLevel = DittoLogLevel.VERBOSE
+    internal suspend fun startDitto(context: Context) {
+        DittoLogger.minimumLogLevel = DittoLogLevel.DEBUG
 
         val dependencies = DefaultAndroidDittoDependencies(context)
         ditto = Ditto(dependencies, DittoIdentity.OnlinePlayground(dependencies, APP_ID, ONLINE_AUTH_TOKEN, false))
 
         try {
+            // Disable sync with V3 Ditto
             ditto?.disableSyncWithV3()
+            // Disable avoid_redundant_bluetooth
+            ditto?.store?.execute("ALTER SYSTEM SET mesh_chooser_avoid_redundant_bluetooth = false")
             ditto?.startSync()
         } catch (e: Exception) {
             Log.e(e.message, e.localizedMessage)

@@ -15,6 +15,8 @@ import android.content.Intent
 import androidx.core.content.ContextCompat
 import android.graphics.Color
 import android.view.*
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
     private lateinit var recyclerView: RecyclerView
@@ -28,7 +30,10 @@ class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
         checkLocationPermission()
 
         DittoManager.itemUpdateListener = this
-        DittoManager.startDitto(applicationContext)
+
+        lifecycleScope.launch {
+            DittoManager.startDitto(applicationContext)
+        }
 
         setupLayout()
     }

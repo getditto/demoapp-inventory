@@ -9,7 +9,7 @@ android {
         applicationId "live.ditto.inventory"
         minSdkVersion 26
         targetSdkVersion 33
-        versionCode 54
+        versionCode 55
         versionName "1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -58,7 +58,7 @@ android {
 }
 
 dependencies {
-    implementation("live.ditto:ditto:4.7.0")
+    implementation("live.ditto:ditto:4.7.2")
 
     // Load Presence Viewer from an .aar library file
     implementation fileTree(dir: "${rootDir}", include: ["*.aar"])
