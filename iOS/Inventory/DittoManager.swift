@@ -13,7 +13,7 @@ import Combine
 
 // MARK: - Class Implementation
 
-final class DittoManager {
+final class DittoManager: ObservableObject {
 
     // MARK: - Ditto Collections
 
@@ -31,6 +31,8 @@ final class DittoManager {
         var items = [ItemDittoModel]()
     }
 
+    @Published var items = [ItemDittoModel]()
+
     private(set) var models = Models()
 
     // MARK: - Singleton object
@@ -39,7 +41,7 @@ final class DittoManager {
 
     // MARK: - Private Ditto properties
 
-    private lazy var ditto: Ditto! = { startDitto() }()
+    lazy var ditto: Ditto! = { startDitto() }()
     private lazy var collections = { Collections(ditto.store) }()
 
     private var subscriptions = [DittoSyncSubscription]()
@@ -71,10 +73,6 @@ final class DittoManager {
 
         return ditto
     }
-
-    var dittoInfoView: DittoInfoViewController {
-        DittoInfoViewFactory.create(ditto: ditto)
-    }
 }
 
 
@@ -96,6 +94,7 @@ extension DittoManager {
 
                 let allItems = docs.map { ItemDittoModel($0) }
                 self.models.items = allItems
+                self.items = allItems
 
                 switch event {
                 case .initial:

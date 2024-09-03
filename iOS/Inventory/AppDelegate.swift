@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import SwiftUI
 
 @UIApplicationMain
 final class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -14,19 +15,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         window = UIWindow(frame: UIScreen.main.bounds)
-        let navigationController = UINavigationController(rootViewController: MainViewController())
-        navigationController.navigationBar.prefersLargeTitles = true
         window?.tintColor = Constants.Colors.mainColor
-        window!.rootViewController = navigationController
+        window!.rootViewController = UIHostingController(rootView: ContentView())
         window!.makeKeyAndVisible()
         return true
-    }
-
-    func applicationWillResignActive(_ application: UIApplication) {
-        BackgroundSync.shared.start()
-    }
-
-    func applicationWillEnterForeground(_ application: UIApplication) {
-        BackgroundSync.shared.stop()
     }
 }
