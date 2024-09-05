@@ -19,7 +19,6 @@
 		07AE55452C876C5A00E1FCBD /* DittoPresenceDegradation in Frameworks */ = {isa = PBXBuildFile; productRef = 07AE55442C876C5A00E1FCBD /* DittoPresenceDegradation */; };
 		07AE55472C876C5A00E1FCBD /* DittoPresenceViewer in Frameworks */ = {isa = PBXBuildFile; productRef = 07AE55462C876C5A00E1FCBD /* DittoPresenceViewer */; };
 		07AE554D2C87721300E1FCBD /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07AE554C2C87721300E1FCBD /* ContentView.swift */; };
-		07AE554F2C87940300E1FCBD /* ItemViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07AE554E2C87940300E1FCBD /* ItemViewModel.swift */; };
 		0EC95D322B0BEA1D006A35A0 /* DittoObjC in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC95D312B0BEA1D006A35A0 /* DittoObjC */; };
 		0EC95D342B0BEA1D006A35A0 /* DittoSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC95D332B0BEA1D006A35A0 /* DittoSwift */; };
 		CC371EF429794A9700430C6F /* DittoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC371EF329794A9700430C6F /* DittoManager.swift */; };
@@ -36,7 +35,6 @@
 /* Begin PBXFileReference section */
 		07AE54FD2C82305600E1FCBD /* Inventory.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Inventory.entitlements; sourceTree = "<group>"; };
 		07AE554C2C87721300E1FCBD /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		07AE554E2C87940300E1FCBD /* ItemViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemViewModel.swift; sourceTree = "<group>"; };
 		CC371EF329794A9700430C6F /* DittoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DittoManager.swift; sourceTree = "<group>"; };
 		CC371EF52979573200430C6F /* ItemDittoModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDittoModel.swift; sourceTree = "<group>"; };
 		CC626BF6298A655B0065E143 /* Env.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Env.swift; sourceTree = "<group>"; };
@@ -107,7 +105,6 @@
 				E3ED324820E439FE005FC8B1 /* LaunchScreen.storyboard */,
 				E3ED324B20E439FF005FC8B1 /* Info.plist */,
 				E32461EB20E47DFC0006C628 /* Constants.swift */,
-				07AE554E2C87940300E1FCBD /* ItemViewModel.swift */,
 				CC371EF329794A9700430C6F /* DittoManager.swift */,
 				CC371EF52979573200430C6F /* ItemDittoModel.swift */,
 				CCD3A727297EA27F00A7EFED /* Extensions.swift */,
@@ -218,11 +215,14 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
+				"$(SRCROOT)/buildEnv.sh",
+				"${SRCROOT}/.env",
 			);
 			name = "Generate Env.swift";
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"${SRCROOT}/${PROJECT}/Env.swift",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -239,7 +239,6 @@
 				E3ED324020E439FD005FC8B1 /* AppDelegate.swift in Sources */,
 				CC371EF62979573200430C6F /* ItemDittoModel.swift in Sources */,
 				CCD3A728297EA27F00A7EFED /* Extensions.swift in Sources */,
-				07AE554F2C87940300E1FCBD /* ItemViewModel.swift in Sources */,
 				E32461EC20E47DFC0006C628 /* Constants.swift in Sources */,
 				CC371EF429794A9700430C6F /* DittoManager.swift in Sources */,
 				CC626BF7298A655B0065E143 /* Env.swift in Sources */,

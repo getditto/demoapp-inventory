@@ -16,7 +16,8 @@ import DittoSwift
     Separating models for Ditto and views could make sync performance better.
  */
 
-struct ItemDittoModel {
+struct ItemDittoModel: Identifiable {
+    var id: String { _id }
 
     // MARK: - Collection Name
 
@@ -24,14 +25,37 @@ struct ItemDittoModel {
 
     // MARK: - Properties
 
-    let _id: Int
+    let _id: String
     let counter: DittoCounter
+    let itemId: Int
+    let imageName: String
+    let title: String
+    let price: Double
+    let detail: String
+}
 
-    // MARK: - Initialization
+extension ItemDittoModel {
+    // MARK: - Initialization from Ditto object
 
     init(_ doc: DittoDocument) {
-        self._id = doc["_id"].intValue
+        self._id = doc["_id"].stringValue
         self.counter = doc["counter"].counter ?? DittoCounter()
+        self.itemId = doc["itemId"].intValue
+        self.imageName = doc["imageName"].stringValue
+        self.title = doc["title"].stringValue
+        self.price = doc["price"].doubleValue
+        self.detail = doc["detail"].stringValue
     }
 
+    func document() -> [String: Any?] {
+        return [
+            "_id": _id,
+            "counter": counter,
+            "itemId": itemId,
+            "imageName": imageName,
+            "title": title,
+            "price": price,
+            "detail": detail,
+        ]
+    }
 }

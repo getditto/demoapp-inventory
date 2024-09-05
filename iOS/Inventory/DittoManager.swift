@@ -27,13 +27,7 @@ final class DittoManager: ObservableObject {
 
     // MARK: - Models for Views
 
-    struct Models {
-        var items = [ItemDittoModel]()
-    }
-
     @Published var items = [ItemDittoModel]()
-
-    private(set) var models = Models()
 
     // MARK: - Singleton object
 
@@ -61,10 +55,6 @@ final class DittoManager: ObservableObject {
         do {
             // Disable sync with V3 Ditto
             try ditto.disableSyncWithV3()
-            // Disable avoid_redundant_bluetooth
-            Task {
-                try await ditto.store.execute(query: "ALTER SYSTEM SET mesh_chooser_avoid_redundant_bluetooth = false")
-            }
             try ditto.startSync()
         } catch {
             let dittoErr = (error as? DittoSwiftError)?.errorDescription
@@ -87,40 +77,18 @@ extension DittoManager {
         } catch {
             print("Query Error: \(error)")
         }
-        
+
         liveQueries.append(
             collections.inventories.findAll().observeLocal { [weak self] docs, event in
-                guard let self = self else { return }
-
-                let allItems = docs.map { ItemDittoModel($0) }
-                self.models.items = allItems
-                self.items = allItems
-
-                switch event {
-                case .initial:
-
-                    self.itemsUpdated.send((indices: allItems.indexes, event: event))
-
-                case .update(let detail):
-
-                    self.itemsUpdated.send((indices: detail.updates, event: event))
-
-                @unknown default: break
-                }
+                self?.items = docs.map { ItemDittoModel($0) }
             }
         )
     }
 
-    func prepopulateItemsIfAbsent(itemIds: [Int]) {
-
-        let allItems = itemIds.map {
-            ["_id": $0,
-             "counter": DittoCounter()]
-        }
-
+    func prepopulateItemsIfAbsent(items: [ItemDittoModel]) {
         ditto.store.write { transaction in
             let scope = transaction.scoped(toCollectionNamed: ItemDittoModel.collectionName)
-            allItems.forEach {
+            items.map{ $0.document() }.forEach {
                 do {
                     try scope.upsert($0, writeStrategy: .insertDefaultIfAbsent)
                 } catch {
@@ -132,14 +100,14 @@ extension DittoManager {
         }
     }
 
-    func incrementCounterFor(id: Int) {
+    func incrementCounterFor(id: String) {
 
         collections.inventories.findByID(id).update { doc in
             doc?["counter"].counter?.increment(by: 1)
         }
     }
 
-    func decrementCounterFor(id: Int)  {
+    func decrementCounterFor(id: String)  {
 
         collections.inventories.findByID(id).update { doc in
             doc?["counter"].counter?.increment(by: -1)
