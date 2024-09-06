@@ -1,5 +1,5 @@
 {
-  "originHash" : "db6d420a4b05785c9bb4c695325989cb35808dfb4681c82a17b15b10e0992775",
+  "originHash" : "09ffcf3308b792bb9a632f175aa47929f479bf53a008132242e1e081b175a854",
   "pins" : [
     {
       "identity" : "cartography",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "fb4ee210d85380084f9bdd26cd5bb987db971da2",
         "version" : "4.8.0"
+      }
+    },
+    {
+      "identity" : "dittoswifttools",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/getditto/DittoSwiftTools.git",
+      "state" : {
+        "revision" : "756a3bf761da352646851f7d45481dc4a790d0d2",
+        "version" : "6.0.0"
       }
     },
     {

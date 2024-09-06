@@ -11,19 +11,16 @@ import DittoSwift
 
 /*
     This is a model to store in Ditto database.
-    We don't store as `ItemViewModel` because some of the data don't need to be transmitted.
-    For this case, Ditto only syncs its ID and counter.
+    We store all of the data into Ditto even though the only data that will change is the counter.
+    For this case, Ditto could also only sync its ID and counter.
     Separating models for Ditto and views could make sync performance better.
  */
 
+
+/// The item model that ditto will be replicated between Ditto Peers.
 struct ItemDittoModel: Identifiable {
-    var id: String { _id }
-
-    // MARK: - Collection Name
-
-    static let collectionName = "inventories"
-
     // MARK: - Properties
+    var id: String { _id }
 
     let _id: String
     let counter: DittoCounter
@@ -38,24 +35,24 @@ extension ItemDittoModel {
     // MARK: - Initialization from Ditto object
 
     init(_ doc: DittoDocument) {
-        self._id = doc["_id"].stringValue
-        self.counter = doc["counter"].counter ?? DittoCounter()
-        self.itemId = doc["itemId"].intValue
-        self.imageName = doc["imageName"].stringValue
-        self.title = doc["title"].stringValue
-        self.price = doc["price"].doubleValue
-        self.detail = doc["detail"].stringValue
+        self._id = doc[_idKey].stringValue
+        self.counter = doc[counterKey].counter ?? DittoCounter()
+        self.itemId = doc[itemIdKey].intValue
+        self.imageName = doc[imageNameKey].stringValue
+        self.title = doc[titleKey].stringValue
+        self.price = doc[priceKey].doubleValue
+        self.detail = doc[detailKey].stringValue
     }
 
     func document() -> [String: Any?] {
         return [
-            "_id": _id,
-            "counter": counter,
-            "itemId": itemId,
-            "imageName": imageName,
-            "title": title,
-            "price": price,
-            "detail": detail,
+            _idKey: _id,
+            counterKey: counter,
+            itemIdKey: itemId,
+            imageNameKey: imageName,
+            titleKey: title,
+            priceKey: price,
+            detailKey: detail,
         ]
     }
 }
