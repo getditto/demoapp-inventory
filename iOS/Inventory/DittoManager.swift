@@ -13,7 +13,9 @@ import Combine
 
 // MARK: - Class Implementation
 
-final class DittoManager {
+/// Singleton implementation of the DittoManager.
+/// This class keeps the persistant connection with Ditto and allows any view to be able to interact with Ditto when it needs to
+final class DittoManager: ObservableObject {
 
     // MARK: - Ditto Collections
 
@@ -21,17 +23,13 @@ final class DittoManager {
         let inventories: DittoCollection
 
         init(_ store: DittoStore) {
-            self.inventories = store.collection(ItemDittoModel.collectionName)
+            self.inventories = store.collection(collectionNameKey)
         }
     }
 
     // MARK: - Models for Views
 
-    struct Models {
-        var items = [ItemDittoModel]()
-    }
-
-    private(set) var models = Models()
+    @Published var items = [ItemDittoModel]()
 
     // MARK: - Singleton object
 
@@ -39,14 +37,11 @@ final class DittoManager {
 
     // MARK: - Private Ditto properties
 
-    private lazy var ditto: Ditto! = { startDitto() }()
+    lazy var ditto: Ditto! = { startDitto() }()
     private lazy var collections = { Collections(ditto.store) }()
 
     private var subscriptions = [DittoSyncSubscription]()
     private var liveQueries = [DittoLiveQuery]()
-
-    // MARK: - Combine Subjects (to be observed from outside of this class)
-    let itemsUpdated = PassthroughSubject<(indices: [Int], event: DittoLiveQueryEvent), Never>()
 
     // constructor is private because this is a singleton class
     private init() {}
@@ -59,10 +54,6 @@ final class DittoManager {
         do {
             // Disable sync with V3 Ditto
             try ditto.disableSyncWithV3()
-            // Disable avoid_redundant_bluetooth
-            Task {
-                try await ditto.store.execute(query: "ALTER SYSTEM SET mesh_chooser_avoid_redundant_bluetooth = false")
-            }
             try ditto.startSync()
         } catch {
             let dittoErr = (error as? DittoSwiftError)?.errorDescription
@@ -71,10 +62,6 @@ final class DittoManager {
 
         return ditto
     }
-
-    var dittoInfoView: DittoInfoViewController {
-        DittoInfoViewFactory.create(ditto: ditto)
-    }
 }
 
 
@@ -82,46 +69,30 @@ final class DittoManager {
 
 extension DittoManager {
 
-    func subscribeAllInventoryItems() {
 
+    /// Creates a subscription to sync changes with other peers in the mesh.
+    /// Adds a live query which will load the now synced data into memory so that views can use it.
+    func subscribeAllInventoryItems() {
         do {
-            subscriptions.append(try ditto.sync.registerSubscription(query: "SELECT * FROM inventories"))
+            subscriptions.append(try ditto.sync.registerSubscription(query: "SELECT * FROM \(collectionNameKey)"))
         } catch {
             print("Query Error: \(error)")
         }
-        
+
         liveQueries.append(
             collections.inventories.findAll().observeLocal { [weak self] docs, event in
-                guard let self = self else { return }
-
-                let allItems = docs.map { ItemDittoModel($0) }
-                self.models.items = allItems
-
-                switch event {
-                case .initial:
-
-                    self.itemsUpdated.send((indices: allItems.indexes, event: event))
-
-                case .update(let detail):
-
-                    self.itemsUpdated.send((indices: detail.updates, event: event))
-
-                @unknown default: break
-                }
+                self?.items = docs.map { ItemDittoModel($0) }
             }
         )
     }
 
-    func prepopulateItemsIfAbsent(itemIds: [Int]) {
 
-        let allItems = itemIds.map {
-            ["_id": $0,
-             "counter": DittoCounter()]
-        }
-
+    /// Takes the hard coded documents and adds them if they do not already exist in the local store.
+    /// - Parameter items: The Ditto items that will be used in the views.
+    func prepopulateItemsIfAbsent(items: [ItemDittoModel]) {
         ditto.store.write { transaction in
-            let scope = transaction.scoped(toCollectionNamed: ItemDittoModel.collectionName)
-            allItems.forEach {
+            let scope = transaction.scoped(toCollectionNamed: collectionNameKey)
+            items.map{ $0.document() }.forEach {
                 do {
                     try scope.upsert($0, writeStrategy: .insertDefaultIfAbsent)
                 } catch {
@@ -133,17 +104,21 @@ extension DittoManager {
         }
     }
 
-    func incrementCounterFor(id: Int) {
 
+    /// Adds one to the Ditto counter on the Ditto document. This will update the local DB and then automatically sync the change with other peers if it can.
+    /// - Parameter id: The id of the document to update
+    func incrementCounterFor(id: String) {
         collections.inventories.findByID(id).update { doc in
-            doc?["counter"].counter?.increment(by: 1)
+            doc?[counterKey].counter?.increment(by: 1)
         }
     }
 
-    func decrementCounterFor(id: Int)  {
 
+    //// Subtracts one from the Ditto counter on the Ditto document. This will update the local DB and then automatically sync the change with other peers if it can.
+    /// - Parameter id: The id of the document to update
+    func decrementCounterFor(id: String)  {
         collections.inventories.findByID(id).update { doc in
-            doc?["counter"].counter?.increment(by: -1)
+            doc?[counterKey].counter?.increment(by: -1)
         }
     }
 }
