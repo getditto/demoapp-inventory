@@ -476,7 +476,7 @@
 			repositoryURL = "https://github.com/getditto/DittoSwiftPackage";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 4.8.2;
+				minimumVersion = 4.9.0;
 			};
 		};
 		CCE8646329E59037007D822C /* XCRemoteSwiftPackageReference "Cartography" */ = {
