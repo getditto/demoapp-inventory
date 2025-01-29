@@ -1,9 +1,10 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 android {
-    compileSdkVersion 34
+
+    compileSdk 35
 
     defaultConfig {
         applicationId "live.ditto.inventory"
@@ -12,16 +13,6 @@ android {
         versionCode 56
         versionName "1.0.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    flavorDimensions("arch")
-    productFlavors {
-        register("all") {
-            setDimension("arch")
-        }
-        register("emulator") {
-            setDimension("arch")
-        }
     }
 
     buildTypes {
@@ -37,9 +28,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             def credsFile = rootProject.file("secure\\release_creds.properties")
             def prop = new Properties()
-            prop.load(new FileInputStream(credsFile))
-            buildConfigField('String', 'APP_ID', prop['APP_ID']) // always use single quotes here
-            buildConfigField('String', 'ONLINE_AUTH_TOKEN', prop['ONLINE_AUTH_TOKEN'])
+            try {
+                prop.load(new FileInputStream(credsFile))
+                buildConfigField('String', 'APP_ID', prop['APP_ID'])
+                // always use single quotes here
+                buildConfigField('String', 'ONLINE_AUTH_TOKEN', prop['ONLINE_AUTH_TOKEN'])
+            } catch (FileNotFoundException e) {
+                logger.warn("Warning: " + e.getMessage())
+            }
+
         }
     }
 
@@ -54,26 +51,39 @@ android {
 
     buildFeatures {
         viewBinding true
+        compose true
     }
+    namespace 'live.ditto.inventory'
 }
 
 dependencies {
-    implementation("live.ditto:ditto:4.7.2")
+    implementation("live.ditto:ditto:4.9.3")
 
-    // Load Presence Viewer from an .aar library file
-    implementation fileTree(dir: "${rootDir}", include: ["*.aar"])
+    // Ditto Tools
+    implementation "live.ditto:ditto-tools-android:4.0.1"
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.fragment:fragment-ktx:1.5.7'
-    implementation 'androidx.core:core-ktx:1.9.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.fragment:fragment-ktx:1.8.5'
+    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.recyclerview:recyclerview:1.3.0'
+    implementation 'androidx.recyclerview:recyclerview:1.4.0'
+
+    // Import the Compose BOM
+    implementation(platform("androidx.compose:compose-bom:2025.01.00"))
+
+    // Compose
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    implementation("androidx.activity:activity-compose")
 
     testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
 }

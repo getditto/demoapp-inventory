@@ -25,8 +25,17 @@ For support, please contact Ditto Support (<support@ditto.live>).
 
 ### Android
 
-1. Open `/Android/gradle.properties` and add environment variables
-1. Build the app normally
+1. Create a folder called `secure` in the `Android` directory.
+2. In the `secure` folder add a file called `debug_creds.properties` with the following content:
+
+```
+APP_ID="your_app_id"
+ONLINE_AUTH_TOKEN="your_playground_token"
+```
+3. Replace `your_app_id` and `your_playground_token` with your App ID and Online Playground token from the Ditto portal. Keep the double quotes!
+4. You can now run the debug build of the app.
+
+If you need to create a release build follow the same steps above, except create a file called `release_creds.properties`.
 
 Compatible with Android Automotive OS (AAOS)
 

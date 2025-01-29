@@ -13,7 +13,7 @@
         app:showAsAction="never" />
 -->
     <item
-        android:id="@+id/show_presence_view"
+        android:id="@+id/show_ditto_tools"
         android:title="@string/show_presence_view"
         app:showAsAction="never" />
 </menu>

@@ -26,21 +26,17 @@ class DittoSDKInfoActivity : AppCompatActivity() {
         val textView = findViewById<TextView>(R.id.ditto_sdk_info_text_view)
 
         intent.getStringExtra("sdkInfo")?.let { sdkInfo ->
-            val platform = sdkInfo?.take(3) ?: "Unknown"
-            val versions = sdkInfo?.drop(3)?.split("_")
+            val platform = sdkInfo.take(3)
+            val versions = sdkInfo.drop(3).split("_")
             val semVer = versions[0]
             val commitHash = versions[1]
 
-            textView.text = """
-                Platform: $platform
-                Version: $semVer
-                Commit Hash: $commitHash
-            """.trimIndent()
+            textView.text = getString(R.string.sdk_info, platform, semVer, commitHash).trimIndent()
         }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        onBackPressed()
+        onBackPressedDispatcher.onBackPressed()
         return true
     }
 }

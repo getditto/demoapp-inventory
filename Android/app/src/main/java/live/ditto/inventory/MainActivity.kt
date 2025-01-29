@@ -1,22 +1,30 @@
 package live.ditto.inventory
 
-import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
-import androidx.recyclerview.widget.DividerItemDecoration
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import kotlinx.android.synthetic.main.item_view.view.*
-import live.ditto.*
-import live.ditto.transports.DittoSyncPermissions
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Intent
-import androidx.core.content.ContextCompat
 import android.graphics.Color
-import android.view.*
+import android.icu.text.NumberFormat
+import android.icu.util.Currency
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.launch
+import live.ditto.transports.DittoSyncPermissions
+import java.util.Locale
 
 class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
     private lateinit var recyclerView: RecyclerView
@@ -83,9 +91,11 @@ class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
             R.id.show_information_view -> {
                 showInformationView(); true
             }
-            R.id.show_presence_view -> {
-                showPresenceView(); true
+
+            R.id.show_ditto_tools -> {
+                showDittoTools(); true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -95,8 +105,8 @@ class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
         startActivity(intent)
     }
 
-    private fun showPresenceView() {
-        val intent = Intent(this, PresenceViewerActivity::class.java)
+    private fun showDittoTools() {
+        val intent = Intent(this, DittoToolsViewerActivity::class.java)
         startActivity(intent)
     }
 
@@ -137,17 +147,21 @@ class ItemsAdapter : RecyclerView.Adapter<ItemsAdapter.ItemViewHolder>() {
 
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
         val item = items[position]
-        holder.itemView.itemTitleView.text = item.title
-        holder.itemView.itemDescriptionView.text = item.detail
-        holder.itemView.quantityView.text = item.count.toString()
-        holder.itemView.imageView.setImageResource(item.image)
-        holder.itemView.priceView.text = "$" + item.price.toString()
-
-        holder.itemView.plusButton.setOnClickListener {
-            onPlusClick?.invoke(items[holder.adapterPosition])
-        }
-        holder.itemView.minusButton.setOnClickListener {
-            onMinusClick?.invoke(items[holder.adapterPosition])
+        with(holder.itemView) {
+            findViewById<TextView>(R.id.itemTitleView).text = item.title
+            findViewById<TextView>(R.id.itemDescriptionView).text = item.detail
+            findViewById<TextView>(R.id.quantityView).text = String.format(
+                locale = Locale.getDefault(),
+                format = "%s", item.count.toString()
+            )
+            findViewById<ImageView>(R.id.imageView).setImageResource(item.image)
+            findViewById<TextView>(R.id.priceView).text = formatMoney(price = item.price)
+            findViewById<Button>(R.id.plusButton).setOnClickListener {
+                onPlusClick?.invoke(items[holder.bindingAdapterPosition])
+            }
+            findViewById<Button>(R.id.minusButton).setOnClickListener {
+                onMinusClick?.invoke(items[holder.bindingAdapterPosition])
+            }
         }
     }
 
@@ -164,6 +178,14 @@ class ItemsAdapter : RecyclerView.Adapter<ItemsAdapter.ItemViewHolder>() {
         this.items.addAll(items)
         notifyDataSetChanged()
         return this.items.size
+    }
+
+    private fun formatMoney(price: Double): String {
+        val formatter = NumberFormat.getCurrencyInstance()
+        with(formatter) {
+            currency = Currency.getInstance("USD")
+        }
+        return formatter.format(price)
     }
 }
 
