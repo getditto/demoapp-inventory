@@ -8,8 +8,7 @@
 
 import UIKit
 import DittoSwift
-import DittoPresenceViewer
-import DittoExportLogs
+import DittoAllToolsMenu
 import SwiftUI
 
 public struct DittoInfoViewFactory {
@@ -23,11 +22,8 @@ public struct DittoInfoViewFactory {
 }
 
 fileprivate enum CellInfo: String, CaseIterable {
-    case presenceView = "Presence View"
+    case dittoTools = "Ditto Tools"
     case sdkInfo = "Ditto SDK Info"
-    case prolonged = "Prolonged Background Sync"
-    case exportLogs = "Export Logs"
-
 
     var index: Int {
         return CellInfo.allCases.firstIndex(of: self)!
@@ -35,12 +31,8 @@ fileprivate enum CellInfo: String, CaseIterable {
 
     var accessoryType: UITableViewCell.AccessoryType {
         switch self {
-        case .presenceView, .sdkInfo:
+        case .dittoTools, .sdkInfo:
             return .disclosureIndicator
-        case .prolonged:
-            return BackgroundSync.shared.isOn ? .checkmark : .none
-        case .exportLogs:
-            return.none
         }
     }
 }
@@ -91,22 +83,14 @@ extension DittoInfoViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let info = toInfo(indexPath)
         switch info {
-        case .presenceView:
-            present(DittoPresenceView(ditto: ditto).viewController, animated: true) {
-                if let selected = tableView.indexPathForSelectedRow {
-                    tableView.deselectRow(at: selected, animated: true)
-                }
-            }
+        case .dittoTools:
+            let vc = UIHostingController(rootView: AllToolsMenu(ditto: ditto))
+            navigationController?.pushViewController(vc, animated: true)
         case .sdkInfo:
             let storyboard = UIStoryboard(name: "DittoInfoView", bundle: Bundle(for: DittoInfoViewController.self))
             let destination = storyboard.instantiateViewController(withIdentifier: "DittoSDKInfoViewController") as! DittoSDKInfoViewController
             destination.ditto = ditto
             navigationController?.pushViewController(destination, animated: true)
-        case .prolonged:
-            BackgroundSync.shared.isOn = !BackgroundSync.shared.isOn
-            tableView.reloadRows(at: [indexPath], with: .automatic)
-        case .exportLogs:
-            shareDittoLogs()
         }
     }
 
@@ -126,23 +110,5 @@ extension DittoInfoViewController: UITableViewDelegate, UITableViewDataSource {
 
     private func toInfo(_ indexPath: IndexPath) -> CellInfo {
         return CellInfo.allCases[indexPath.row]
-    }
-    
-    private func shareDittoLogs() {
-        let alert = UIAlertController(title: "Export Logs", message: "Compressing the logs may take a few seconds.", preferredStyle: .alert)
-
-        alert.addAction(UIAlertAction(title: "Export", style: .default) { [weak self] _ in
-            self?.exportLogs()
-        })
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-
-        present(alert, animated: true)
-    }
-    
-    private func exportLogs() {
-        
-        let vc = UIHostingController(rootView: ExportLogs())
-
-        present(vc, animated: true)
     }
 }
