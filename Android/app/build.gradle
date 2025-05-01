@@ -57,10 +57,10 @@ android {
 }
 
 dependencies {
-    implementation("live.ditto:ditto:4.9.3")
+    implementation("live.ditto:ditto:4.10.2")
 
     // Ditto Tools
-    implementation "live.ditto:ditto-tools-android:4.0.1"
+    implementation "live.ditto:ditto-tools-android:4.0.2"
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.7.0'
