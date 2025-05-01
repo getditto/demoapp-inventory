@@ -13,6 +13,7 @@
 		0EC95D2F2B0BE9D8006A35A0 /* DittoPresenceViewer in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC95D2E2B0BE9D8006A35A0 /* DittoPresenceViewer */; };
 		0EC95D322B0BEA1D006A35A0 /* DittoObjC in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC95D312B0BEA1D006A35A0 /* DittoObjC */; };
 		0EC95D342B0BEA1D006A35A0 /* DittoSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC95D332B0BEA1D006A35A0 /* DittoSwift */; };
+		11C249E62DC37DB3009B65AA /* DittoAllToolsMenu in Frameworks */ = {isa = PBXBuildFile; productRef = 11C249E52DC37DB3009B65AA /* DittoAllToolsMenu */; };
 		CC371EF429794A9700430C6F /* DittoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC371EF329794A9700430C6F /* DittoManager.swift */; };
 		CC371EF62979573200430C6F /* ItemDittoModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC371EF52979573200430C6F /* ItemDittoModel.swift */; };
 		CC481D6C24B073230007C4D2 /* DittoSDKInfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC481D5E24B073230007C4D2 /* DittoSDKInfoViewController.swift */; };
@@ -58,6 +59,7 @@
 				0EC95D2B2B0BE9D8006A35A0 /* DittoExportLogs in Frameworks */,
 				0EC95D252B0BE9D8006A35A0 /* DittoDataBrowser in Frameworks */,
 				0EC95D322B0BEA1D006A35A0 /* DittoObjC in Frameworks */,
+				11C249E62DC37DB3009B65AA /* DittoAllToolsMenu in Frameworks */,
 				CCE8646529E59037007D822C /* Cartography in Frameworks */,
 				0EC95D2F2B0BE9D8006A35A0 /* DittoPresenceViewer in Frameworks */,
 				0EC95D342B0BEA1D006A35A0 /* DittoSwift in Frameworks */,
@@ -146,6 +148,7 @@
 				0EC95D2E2B0BE9D8006A35A0 /* DittoPresenceViewer */,
 				0EC95D312B0BEA1D006A35A0 /* DittoObjC */,
 				0EC95D332B0BEA1D006A35A0 /* DittoSwift */,
+				11C249E52DC37DB3009B65AA /* DittoAllToolsMenu */,
 			);
 			productName = Inventory;
 			productReference = E3ED323C20E439FD005FC8B1 /* Inventory.app */;
@@ -468,7 +471,7 @@
 			repositoryURL = "https://github.com/getditto/DittoSwiftTools";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 6.0.0;
+				minimumVersion = 8.0.0;
 			};
 		};
 		0EC95D302B0BEA1D006A35A0 /* XCRemoteSwiftPackageReference "DittoSwiftPackage" */ = {
@@ -476,7 +479,7 @@
 			repositoryURL = "https://github.com/getditto/DittoSwiftPackage";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 4.8.2;
+				minimumVersion = 4.10.0;
 			};
 		};
 		CCE8646329E59037007D822C /* XCRemoteSwiftPackageReference "Cartography" */ = {
@@ -519,6 +522,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0EC95D302B0BEA1D006A35A0 /* XCRemoteSwiftPackageReference "DittoSwiftPackage" */;
 			productName = DittoSwift;
+		};
+		11C249E52DC37DB3009B65AA /* DittoAllToolsMenu */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0EC95D232B0BE9D8006A35A0 /* XCRemoteSwiftPackageReference "DittoSwiftTools" */;
+			productName = DittoAllToolsMenu;
 		};
 		CCE8646429E59037007D822C /* Cartography */ = {
 			isa = XCSwiftPackageProductDependency;
