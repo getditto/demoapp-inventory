@@ -134,7 +134,7 @@ extension DittoManager {
             storeObserver = try ditto.store.registerObserver(query: query) {
                 [weak self] results in
                 
-                let allItems = results.items.map{ ItemDittoModel($0.value) }
+                let allItems = results.items.compactMap{ ItemDittoModel($0.jsonString()) }
                 self?.models.items = allItems
                 let diff = dittoDiffer.diff(results.items)
 
