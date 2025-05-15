@@ -78,6 +78,7 @@ final class MainViewController: UIViewController {
             }.store(in: &cancellables)
     }
 
+    //UPDATED to use an IndexSet
     private func updateViewFor(indices: IndexSet) {
         let indexPaths = indices.map { IndexPath(row: $0, section: 0) }
         UIView.performWithoutAnimation {
