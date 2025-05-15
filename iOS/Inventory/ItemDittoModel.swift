@@ -25,13 +25,25 @@ struct ItemDittoModel {
     // MARK: - Properties
 
     let _id: Int
-    let counter: DittoCounter
+    let counter: Double
 
     // MARK: - Initialization
 
-    init(_ doc: DittoDocument) {
-        self._id = doc["_id"].intValue
-        self.counter = doc["counter"].counter ?? DittoCounter()
+    init(_ doc: [String: Any?]) {
+        self._id = doc["_id"] as! Int
+        if doc["counter"] != nil {
+            if let firstUnwrap = doc["counter"]
+                ,let secondWrap = firstUnwrap
+               ,let doubleValue = secondWrap as? Double {
+                self.counter = doubleValue
+            }
+            else {
+                self.counter = 0.0
+            }
+        } else {
+            // Handle nil case
+            self.counter = 0.0
+        }
     }
 
 }
