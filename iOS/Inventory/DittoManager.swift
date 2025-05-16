@@ -139,7 +139,7 @@ extension DittoManager {
                 let diff = dittoDiffer.diff(results.items)
 
                 // NOTE:  if you are curious on why we don't handle deletions - the app code
-                // currently does allow deleting of inventory items, so there is no reason to handle
+                // currently does not allow deleting of inventory items, so there is no reason to handle
                 // checking the count of deletions.
 
                 // if the insertions count is greater than zero and others are empty
