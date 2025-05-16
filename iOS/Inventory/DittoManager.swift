@@ -191,6 +191,7 @@ extension DittoManager {
                                     "item":
                                         [
                                             "_id": itemId,
+                                            "counter": 0.0
                                         ]
                                 ]
                             )
