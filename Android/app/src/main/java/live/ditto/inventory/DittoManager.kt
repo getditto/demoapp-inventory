@@ -6,8 +6,6 @@ import live.ditto.*
 import live.ditto.android.DefaultAndroidDittoDependencies
 
 object DittoManager {
-
-
     /* Interfaces */
     interface ItemUpdateListener {
         fun setInitial(items: List<ItemModel>)
@@ -17,22 +15,16 @@ object DittoManager {
     /* Settable from outside */
     lateinit var itemUpdateListener: ItemUpdateListener
 
-
     /* Get-only properties */
     var ditto: Ditto? = null; private set
 
-
     /* Private properties */
-    private const val COLLECTION_NAME = "inventories"
-    private var collection: DittoCollection? = null
-
     private var subscription: DittoSyncSubscription? = null
-    private var liveQuery: DittoLiveQuery? = null
+    private var observer: DittoStoreObserver? = null
 
     // Those values should be pasted in 'gradle.properties'. See the notion page for more details.
     private const val APP_ID = BuildConfig.DITTO_APP_ID
     private const val ONLINE_AUTH_TOKEN = BuildConfig.DITTO_PLAYGROUND_TOKEN
-
 
     /* Internal functions and properties */
     internal suspend fun startDitto(context: Context) {
@@ -62,8 +54,6 @@ object DittoManager {
         } catch (e: Exception) {
             e.localizedMessage?.let { Log.e(e.message, it) }
         }
-
-        collection = ditto?.store?.collection(COLLECTION_NAME)
 
         observeItems()
         insertDefaultDataIfAbsent()
@@ -136,7 +126,7 @@ object DittoManager {
 
             // Register Observer to see changes in the database from sync
             // https://docs.ditto.live/sdk/latest/crud/observing-data-changes
-            it.store.registerObserver(query) { results ->
+            observer = it.store.registerObserver(query) { results ->
                 val diff = dittoDiffer.diff(results.items)
 
                 // NOTE:  if you are curious on why we don't handle deletions - the app code
