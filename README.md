@@ -15,12 +15,15 @@ For support, please contact Ditto Support (<support@ditto.live>).
 
 ## How to build the apps
 
+### Environment Variables
+1. Copy the `.env.template` file to `.env`.
+   - in a terminal: `cp .env.template .env`.
+   - in a macOS Finder window, press `⇧⌘.` (SHIFT+CMD+period) to show hidden files.
+1. Save your App ID, Online Playground Token, Auth URL, and WebSocket URL in the `.env` file.
 ### iOS
 
-1. Run `cp .env.template .env` at the root directory
-1. Edit `.env` to add environment variables
 1. Open the app project on Xcode and clean (<kbd>Command</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd>)
-1. Build (<kbd>Command</kbd> + <kbd>B</kbd>)
+2. Build (<kbd>Command</kbd> + <kbd>B</kbd>)
     - This will generate `Env.swift`
 
 ### Android

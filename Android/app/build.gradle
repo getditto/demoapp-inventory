@@ -16,23 +16,27 @@ android {
     }
 
     buildTypes {
+
         debug {
-            def credsFile = rootProject.file("secure\\debug_creds.properties")
+            def credsFile = rootProject.file("../.env")
             def prop = new Properties()
             prop.load(new FileInputStream(credsFile))
-            buildConfigField('String', 'APP_ID', prop['APP_ID']) // always use single quotes here
-            buildConfigField('String', 'ONLINE_AUTH_TOKEN', prop['ONLINE_AUTH_TOKEN'])
+            buildConfigField('String', 'DITTO_APP_ID', "\"${prop['DITTO_APP_ID']}\"")
+            buildConfigField('String', 'DITTO_PLAYGROUND_TOKEN', "\"${prop['DITTO_PLAYGROUND_TOKEN']}\"")
+            buildConfigField('String', 'DITTO_AUTH_URL', "\"${prop['DITTO_AUTH_URL']}\"")
+            buildConfigField('String', 'DITTO_WEBSOCKET_URL', "\"${prop['DITTO_WEBSOCKET_URL']}\"")
         }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            def credsFile = rootProject.file("secure\\release_creds.properties")
+            def credsFile = rootProject.file("../.env")
             def prop = new Properties()
             try {
                 prop.load(new FileInputStream(credsFile))
-                buildConfigField('String', 'APP_ID', prop['APP_ID'])
-                // always use single quotes here
-                buildConfigField('String', 'ONLINE_AUTH_TOKEN', prop['ONLINE_AUTH_TOKEN'])
+                buildConfigField('String', 'DITTO_APP_ID', "\"${prop['DITTO_APP_ID']}\"")
+                buildConfigField('String', 'DITTO_PLAYGROUND_TOKEN', "\"${prop['DITTO_PLAYGROUND_TOKEN']}\"")
+                buildConfigField('String', 'DITTO_AUTH_URL', "\"${prop['DITTO_AUTH_URL']}\"")
+                buildConfigField('String', 'DITTO_WEBSOCKET_URL', "\"${prop['DITTO_WEBSOCKET_URL']}\"")
             } catch (FileNotFoundException e) {
                 logger.warn("Warning: " + e.getMessage())
             }
@@ -41,12 +45,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '11'
     }
 
     buildFeatures {
@@ -57,7 +61,7 @@ android {
 }
 
 dependencies {
-    implementation("live.ditto:ditto:4.10.2")
+    implementation("live.ditto:ditto:4.11.0-preview.2")
 
     // Ditto Tools
     implementation "live.ditto:ditto-tools-android:4.0.2"

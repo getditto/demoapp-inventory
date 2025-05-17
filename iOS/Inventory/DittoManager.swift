@@ -70,8 +70,8 @@ final class DittoManager {
             ditto = Ditto(
                 identity:
                     .onlinePlayground(
-                        appID: Env.APP_ID,
-                        token: Env.ONLINE_AUTH_TOKEN,
+                        appID: Env.DITTO_APP_ID,
+                        token: Env.DITTO_PLAYGROUND_TOKEN,
                         enableDittoCloudSync: false
                     )
             )
@@ -173,13 +173,12 @@ extension DittoManager {
     /// - Parameter itemIds: An array of integers representing the IDs of the items to be inserted.
     func prepopulateItemsIfAbsent(itemIds: [Int]) {
 
-        // CREATE new items using the INSERT INTO xxx INTIAL statement - must use
-        // initial for first time seeding of documents so sync doesn't screw up
-        // between peers - this matches .insertDefaultIfAbsent in QueryBuilder
-        let query = "INSERT INTO inventories INTIAL DOCUMENTS (:item)"
+        // CREATE new items using the INSERT INTO xxx INTIAL statement
+        // https://docs.ditto.live/dql/insert#insert-with-initial-documents
+        let query = "INSERT INTO inventories INITIAL DOCUMENTS (:item)"
 
         Task {
-            // Create a transaction to run inserts into with DQL - this is the equvilant to scoped transaction using store.write
+            // Create a transaction to run inserts into with DQL - this is the equivalent to scoped transaction using store.write
             // TODO insert doc link to transactions with DQL
             do {
                 try await ditto.store.transaction { transaction in
@@ -216,7 +215,7 @@ extension DittoManager {
 
     func incrementCounterFor(id: Int) {
         // UPDATE Counter using DQL PN_INCREMENT function
-        // TODO insert URL to documenation link
+        // TODO insert URL to documentation link
         let query =
             "UPDATE inventories APPLY counter PN_INCREMENT BY 1.0 WHERE _id = :id"
         Task {
@@ -232,7 +231,7 @@ extension DittoManager {
 
     func decrementCounterFor(id: Int) {
         // UPDATE Counter using DQL PN_INCREMENT function
-        // TODO insert URL to documenation link
+        // TODO insert URL to documentation link
         let query =
             "UPDATE inventories APPLY counter PN_INCREMENT BY -1.0 WHERE _id = :id"
         Task {
