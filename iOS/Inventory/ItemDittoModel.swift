@@ -50,16 +50,6 @@ extension ItemDittoModel: Identifiable {
 
 // MARK: - Codable
 extension ItemDittoModel: Codable {
-    /// Returns optional instance decoded from `QueryResultItem.jsonString()`
-    init?(_ json: String) {
-        do {
-            self = try JSONDecoder().decode(Self.self, from: Data(json.utf8))
-        } catch {
-            print("ERROR:", error.localizedDescription)
-            return nil
-        }
-    }
-    
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         _id = try container.decode(Int.self, forKey: ._id)

@@ -134,29 +134,34 @@ extension DittoManager {
             storeObserver = try ditto.store.registerObserver(query: query) {
                 [weak self] results in
                 
-                let allItems = results.items.compactMap{ ItemDittoModel($0.jsonString()) }
-                self?.models.items = allItems
-                let diff = dittoDiffer.diff(results.items)
-
-                // NOTE:  if you are curious on why we don't handle deletions - the app code
-                // currently does not allow deleting of inventory items, so there is no reason to handle
-                // checking the count of deletions.
-
-                // if the insertions count is greater than zero and others are empty
-                // assume initial load
-                if diff.insertions.count > 0 && diff.deletions.isEmpty
-                    && diff.updates.isEmpty
-                {
-                    let event = SyncEvent.initial
-                    self?.itemsUpdated.send(
-                        (indices: diff.insertions, event: event)
-                    )
-
-                } else {
-                    let event = SyncEvent.update
-                    self?.itemsUpdated.send(
-                        (indices: diff.updates, event: event)
-                    )
+                do {
+                    let decoder = JSONDecoder()
+                    let allItems = try results.items.compactMap{ try decoder.decode(ItemDittoModel.self, from: $0.jsonData()) }
+                    self?.models.items = allItems
+                    let diff = dittoDiffer.diff(results.items)
+                    
+                    // NOTE:  if you are curious on why we don't handle deletions - the app code
+                    // currently does not allow deleting of inventory items, so there is no reason to handle
+                    // checking the count of deletions.
+                    
+                    // if the insertions count is greater than zero and others are empty
+                    // assume initial load
+                    if diff.insertions.count > 0 && diff.deletions.isEmpty
+                        && diff.updates.isEmpty
+                    {
+                        let event = SyncEvent.initial
+                        self?.itemsUpdated.send(
+                            (indices: diff.insertions, event: event)
+                        )
+                        
+                    } else {
+                        let event = SyncEvent.update
+                        self?.itemsUpdated.send(
+                            (indices: diff.updates, event: event)
+                        )
+                    }
+                } catch {
+                    print("Error: \(error)")
                 }
             }
         } catch {
