@@ -61,7 +61,7 @@ android {
 }
 
 dependencies {
-    implementation("live.ditto:ditto:4.11.0-preview.2")
+    implementation("live.ditto:ditto:4.11.0")
 
     // Ditto Tools
     implementation "live.ditto:ditto-tools-android:4.0.2"
