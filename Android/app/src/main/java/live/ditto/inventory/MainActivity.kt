@@ -25,11 +25,15 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.launch
 import live.ditto.transports.DittoSyncPermissions
 import java.util.Locale
+import androidx.appcompat.widget.SearchView
+
 
 class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
     private lateinit var recyclerView: RecyclerView
     private lateinit var viewManager: RecyclerView.LayoutManager
     private lateinit var itemsAdapter: ItemsAdapter
+    private lateinit var searchView: SearchView
+    private var fullItemList: List<ItemModel> = listOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,14 +60,34 @@ class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
             adapter = itemsAdapter
         }
 
+        searchView = findViewById(R.id.searchView)
+        setupSearch()
+
         recyclerView.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
 
-        itemsAdapter.onPlusClick = { it ->
-            DittoManager.increment(it.itemId)
-        }
-        itemsAdapter.onMinusClick = { it ->
-            DittoManager.decrement(it.itemId)
-        }
+        itemsAdapter.onPlusClick = { DittoManager.increment(it.itemId) }
+        itemsAdapter.onMinusClick = { DittoManager.decrement(it.itemId) }
+    }
+
+    private fun setupSearch() {
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return false // let user keep typing
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                val filtered = if (newText.isNullOrBlank()) {
+                    fullItemList
+                } else {
+                    fullItemList.filter {
+                        it.title.contains(newText, ignoreCase = true) ||
+                                it.detail.contains(newText, ignoreCase = true)
+                    }
+                }
+                itemsAdapter.setFilteredItems(filtered)
+                return true
+            }
+        })
     }
 
     private fun animateGlow(index: Int) {
@@ -110,6 +134,7 @@ class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
         startActivity(intent)
     }
 
+
     private fun checkLocationPermission() {
         val missing = DittoSyncPermissions(this).missingPermissions()
         if (missing.isNotEmpty()) {
@@ -120,9 +145,11 @@ class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
     /* UpdateItemListener */
     override fun setInitial(items: List<ItemModel>) {
         runOnUiThread {
-            itemsAdapter.setInitial(items)
+            fullItemList = items
+            itemsAdapter.setFilteredItems(items)
         }
     }
+
 
     override fun updateCount(index: Int, count: Int) {
         runOnUiThread {
@@ -179,6 +206,13 @@ class ItemsAdapter : RecyclerView.Adapter<ItemsAdapter.ItemViewHolder>() {
         notifyDataSetChanged()
         return this.items.size
     }
+    @SuppressLint("NotifyDataSetChanged")
+    fun setFilteredItems(items: List<ItemModel>) {
+        this.items.clear()
+        this.items.addAll(items)
+        notifyDataSetChanged()
+    }
+
 
     private fun formatMoney(price: Double): String {
         val formatter = NumberFormat.getCurrencyInstance()
