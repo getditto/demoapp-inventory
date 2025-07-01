@@ -17,21 +17,49 @@ import DittoSwift
  */
 
 struct ItemDittoModel {
-
+    
     // MARK: - Collection Name
-
+    
     static let collectionName = "inventories"
-
+    
     // MARK: - Properties
-
+    
     let _id: Int
-    let counter: DittoCounter
-
-    // MARK: - Initialization
-
-    init(_ doc: DittoDocument) {
-        self._id = doc["_id"].intValue
-        self.counter = doc["counter"].counter ?? DittoCounter()
-    }
-
+    let counter: Double
+    
 }
+
+extension ItemDittoModel {
+    /// Convenience initializer returns instance from `QueryResultItem.value`
+    init(_ value: [String: Any?]) {
+        self._id = value["_id"] as! Int
+        if (value["counter"] != nil){
+            self.counter = value["counter"] as! Double
+        } else {
+            self.counter = 0.0
+        }
+    }
+}
+
+extension ItemDittoModel: Identifiable {
+    /// Required for SwiftUI List view
+    var id: Int {
+        return _id
+    }
+}
+
+// MARK: - Codable
+extension ItemDittoModel: Codable {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        _id = try container.decode(Int.self, forKey: ._id)
+        counter = try container.decodeIfPresent(Double.self, forKey: .counter) ?? 0.0
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case _id
+        case counter
+    }
+}
+
+

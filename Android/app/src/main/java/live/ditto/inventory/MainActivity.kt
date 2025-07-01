@@ -59,10 +59,14 @@ class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
         recyclerView.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
 
         itemsAdapter.onPlusClick = { it ->
-            DittoManager.increment(it.itemId)
+            lifecycleScope.launch {
+                DittoManager.increment(it.itemId)
+            }
         }
         itemsAdapter.onMinusClick = { it ->
-            DittoManager.decrement(it.itemId)
+            lifecycleScope.launch {
+                DittoManager.decrement(it.itemId)
+            }
         }
     }
 

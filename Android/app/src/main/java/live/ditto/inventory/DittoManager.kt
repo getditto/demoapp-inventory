@@ -6,34 +6,25 @@ import live.ditto.*
 import live.ditto.android.DefaultAndroidDittoDependencies
 
 object DittoManager {
-
-
     /* Interfaces */
     interface ItemUpdateListener {
         fun setInitial(items: List<ItemModel>)
         fun updateCount(index: Int, count: Int)
     }
 
-
     /* Settable from outside */
     lateinit var itemUpdateListener: ItemUpdateListener
-
 
     /* Get-only properties */
     var ditto: Ditto? = null; private set
 
-
     /* Private properties */
-    private const val COLLECTION_NAME = "inventories"
-    private var collection: DittoCollection? = null
-
     private var subscription: DittoSyncSubscription? = null
-    private var liveQuery: DittoLiveQuery? = null
+    private var observer: DittoStoreObserver? = null
 
     // Those values should be pasted in 'gradle.properties'. See the notion page for more details.
-    private const val APP_ID = BuildConfig.APP_ID
-    private const val ONLINE_AUTH_TOKEN = BuildConfig.ONLINE_AUTH_TOKEN
-
+    private const val APP_ID = BuildConfig.DITTO_APP_ID
+    private const val ONLINE_AUTH_TOKEN = BuildConfig.DITTO_PLAYGROUND_TOKEN
 
     /* Internal functions and properties */
     internal suspend fun startDitto(context: Context) {
@@ -43,30 +34,48 @@ object DittoManager {
         ditto = Ditto(dependencies, DittoIdentity.OnlinePlayground(dependencies, APP_ID, ONLINE_AUTH_TOKEN, false))
 
         try {
-            // Disable sync with V3 Ditto
-            ditto?.disableSyncWithV3()
-            // Disable avoid_redundant_bluetooth
-            ditto?.store?.execute("ALTER SYSTEM SET mesh_chooser_avoid_redundant_bluetooth = false")
-            ditto?.startSync()
-        } catch (e: Exception) {
-            Log.e(e.message, e.localizedMessage)
-        }
+            ditto?.let {
+                // Disable sync with V3 Ditto
+                it.disableSyncWithV3()
 
-        collection = ditto?.store?.collection(COLLECTION_NAME)
+                // disable strict mode - allows for DQL with counters and objects as CRDT maps, must be called before startSync
+                // https://docs.ditto.live/dql/strict-mode 
+                it.store.execute("ALTER SYSTEM SET DQL_STRICT_MODE = false")
+
+                // start sync
+                // https://docs.ditto.live/sdk/latest/sync/start-and-stop-sync
+                it.startSync()
+            }
+
+        } catch (e: Throwable) {
+            e.localizedMessage?.let { Log.e(e.message, it) }
+        }
 
         observeItems()
         insertDefaultDataIfAbsent()
     }
 
-    internal fun increment(itemId: Int) {
-        collection?.findById(itemId)?.update {
-            it?.get("counter")?.counter?.increment(1.0)
+    internal suspend fun increment(itemId: Int) {
+        // UPDATE Counter using DQL PN_INCREMENT function
+        // TODO insert URL to documentation link
+        val query = "UPDATE inventories APPLY counter PN_INCREMENT BY 1.0 WHERE _id = :id"
+        try {
+            ditto?.store?.execute(query,
+                mapOf("id" to itemId))
+        } catch (e: Throwable){
+            e.localizedMessage?.let { Log.e(e.message, it) }
         }
     }
 
-    internal fun decrement(itemId: Int) {
-        collection?.findById(itemId)?.update {
-            it?.get("counter")?.counter?.increment(-1.0)
+    internal suspend fun decrement(itemId: Int) {
+        // UPDATE Counter using DQL PN_INCREMENT function
+        // TODO insert URL to documentation link
+        val query = "UPDATE inventories APPLY counter PN_INCREMENT BY -1.0 WHERE _id = :id"
+        try {
+            ditto?.store?.execute(query,
+                mapOf("id" to itemId))
+        } catch (e: Throwable){
+            e.localizedMessage?.let { Log.e(e.message, it) }
         }
     }
 
@@ -75,43 +84,60 @@ object DittoManager {
 
 
     /* Private functions and properties */
+    private suspend fun insertDefaultDataIfAbsent() {
+        // CREATE new items using the INSERT INTO xxx INTIAL statement
+        // https://docs.ditto.live/dql/insert#insert-with-initial-documents
+        val query = "INSERT INTO inventories INITIAL DOCUMENTS (:item)"
 
-    private fun insertDefaultDataIfAbsent() {
-
-        ditto?.store?.write { transaction ->
-            val scope = transaction.scoped(COLLECTION_NAME)
-
-            for (viewItem in itemsForView) {
-                val doc = collection?.findById(viewItem.itemId)?.exec()
-
-                if (doc == null) {
-                    scope.upsert(mapOf("_id" to viewItem.itemId, "counter" to DittoCounter()), writeStrategy = DittoWriteStrategy.InsertDefaultIfAbsent)
-                } else {
-                    viewItem.count = doc["counter"].intValue
-                }
-            }
+        // Create a transaction to run inserts into with DQL - this is the equivalent to scoped transaction using store.write
+        // https://docs.ditto.live/sdk/latest/crud/transactions
+        ditto?.store?.transaction {
+             try {
+                 for (viewItem in itemsForView) {
+                     it.execute(query,
+                         mapOf("item" to
+                                 mapOf("_id" to viewItem.itemId,
+                                     "counter" to 0.0)
+                         )
+                     )
+                 }
+             } catch (e: Throwable){
+                 e.localizedMessage?.let { Log.e(e.message, it) }
+                 DittoTransactionCompletionAction.Rollback
+             }
+            DittoTransactionCompletionAction.Commit
         }
     }
 
     private fun observeItems() {
-        val query = collection?.findAll()
+        val query = "SELECT * FROM inventories"
+        ditto?.let {
+            // Create Subscription
+            // https://docs.ditto.live/sdk/latest/sync/syncing-data#creating-subscriptions
+            subscription = it.sync.registerSubscription(query)
 
-        subscription =  ditto?.sync?.registerSubscription(query = "SELECT * FROM inventories")
+            // DittoDiffer - used to calculate the delta changes between syncs
+            // https://docs.ditto.live/sdk/latest/crud/read#diffing-results
+            val dittoDiffer = DittoDiffer()
 
-        liveQuery = query?.observeLocal { docs, event ->
+            // Register Observer to see changes in the database from sync
+            // https://docs.ditto.live/sdk/latest/crud/observing-data-changes
+            observer = it.store.registerObserver(query) { results ->
+                val diff = dittoDiffer.diff(results.items)
 
-            when (event) {
+                // NOTE:  if you are curious on why we don't handle deletions - the app code
+                // currently does not allow deleting of inventory items, so there is no reason to handle
+                // checking the count of deletions.
 
-                is DittoLiveQueryEvent.Initial -> {
-                    itemUpdateListener.setInitial(itemsForView.toMutableList())
-                }
-
-                is DittoLiveQueryEvent.Update -> {
-                    event.updates.forEach { index ->
-                        val doc = docs[index]
-                        val count = doc["counter"].intValue
-
-                        itemUpdateListener.updateCount(index, count)
+                // if the insertions count is greater than zero and others are empty
+                // assume initial load
+                if (diff.insertions.isNotEmpty() && diff.deletions.isEmpty() && diff.updates.isEmpty()) {
+                   itemUpdateListener.setInitial(itemsForView.toMutableList())
+                } else {
+                    diff.updates.forEach { index ->
+                        val doc = results.items[index].value
+                        val count = doc["counter"] as Float
+                        itemUpdateListener.updateCount(index, count.toInt())
                     }
                 }
             }
