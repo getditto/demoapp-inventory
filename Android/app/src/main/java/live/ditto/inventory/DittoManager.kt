@@ -47,7 +47,7 @@ object DittoManager {
                 it.startSync()
             }
 
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             e.localizedMessage?.let { Log.e(e.message, it) }
         }
 
@@ -62,7 +62,7 @@ object DittoManager {
         try {
             ditto?.store?.execute(query,
                 mapOf("id" to itemId))
-        } catch (e: Exception){
+        } catch (e: Throwable){
             e.localizedMessage?.let { Log.e(e.message, it) }
         }
     }
@@ -74,7 +74,7 @@ object DittoManager {
         try {
             ditto?.store?.execute(query,
                 mapOf("id" to itemId))
-        } catch (e: Exception){
+        } catch (e: Throwable){
             e.localizedMessage?.let { Log.e(e.message, it) }
         }
     }
@@ -101,7 +101,7 @@ object DittoManager {
                          )
                      )
                  }
-             } catch (e: Exception){
+             } catch (e: Throwable){
                  e.localizedMessage?.let { Log.e(e.message, it) }
                  DittoTransactionCompletionAction.Rollback
              }
