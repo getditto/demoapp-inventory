@@ -119,7 +119,7 @@ extension DittoManager {
             )
 
             // DittoDiffer - used to calculate the delta changes between syncs
-            // TODO put in link to docs that describes the differ
+            // https://docs.ditto.live/sdk/latest/crud/read#diffing-results
             let dittoDiffer = DittoDiffer()
 
             // Register Observer to see changes in the database from sync
@@ -177,7 +177,7 @@ extension DittoManager {
 
         Task {
             // Create a transaction to run inserts into with DQL - this is the equivalent to scoped transaction using store.write
-            // TODO insert doc link to transactions with DQL
+            // https://docs.ditto.live/sdk/latest/crud/transactions
             do {
                 try await ditto.store.transaction { transaction in
                     for itemId in itemIds {
