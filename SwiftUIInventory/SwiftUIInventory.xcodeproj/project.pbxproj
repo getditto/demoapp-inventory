@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		1198F0F62E70596C00FECB0B /* DittoSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 1198F0F52E70596C00FECB0B /* DittoSwift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		1198F0CF2E6F30E100FECB0B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1198F0F62E70596C00FECB0B /* DittoSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -113,6 +118,7 @@
 			);
 			name = SwiftUIInventory;
 			packageProductDependencies = (
+				1198F0F52E70596C00FECB0B /* DittoSwift */,
 			);
 			productName = SwiftUIInventory;
 			productReference = 1198F0C12E6F30DF00FECB0B /* SwiftUIInventory.app */;
@@ -196,6 +202,9 @@
 			);
 			mainGroup = 1198F0B82E6F30DF00FECB0B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1198F0F42E70596C00FECB0B /* XCRemoteSwiftPackageReference "DittoSwiftPackage" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1198F0C22E6F30DF00FECB0B /* Products */;
 			projectDirPath = "";
@@ -428,6 +437,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -456,6 +466,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -577,6 +588,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1198F0F42E70596C00FECB0B /* XCRemoteSwiftPackageReference "DittoSwiftPackage" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getditto/DittoSwiftPackage.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.12.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1198F0F52E70596C00FECB0B /* DittoSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1198F0F42E70596C00FECB0B /* XCRemoteSwiftPackageReference "DittoSwiftPackage" */;
+			productName = DittoSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1198F0B92E6F30DF00FECB0B /* Project object */;
 }
