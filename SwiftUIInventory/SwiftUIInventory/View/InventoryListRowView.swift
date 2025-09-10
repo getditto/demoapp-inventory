@@ -41,16 +41,12 @@ struct InventoryListRowView: View {
         HStack {
             Image(viewModel.item.imageName)
                 .resizable()
-                .aspectRatio(contentMode: .fill)
+                .aspectRatio(contentMode: .fit)
                 .frame(width: 80, height: 100)
             VStack(alignment: .leading) {
-                HStack {
-                    Text(viewModel.item.title)
-                        .font(.title)
-                        .fontWeight(.bold)
-                    Spacer()
-
-                }
+                Text(viewModel.item.title)
+                    .font(.title)
+                    .fontWeight(.bold)
                 Text(viewModel.item.detail)
                     .font(.body)
                     .fontWeight(.light)

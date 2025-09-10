@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1198F0F62E70596C00FECB0B /* DittoSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 1198F0F52E70596C00FECB0B /* DittoSwift */; };
+		1198F11F2E71BDA200FECB0B /* DittoAllToolsMenu in Frameworks */ = {isa = PBXBuildFile; productRef = 1198F11E2E71BDA200FECB0B /* DittoAllToolsMenu */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,6 +57,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1198F11F2E71BDA200FECB0B /* DittoAllToolsMenu in Frameworks */,
 				1198F0F62E70596C00FECB0B /* DittoSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -119,6 +121,7 @@
 			name = SwiftUIInventory;
 			packageProductDependencies = (
 				1198F0F52E70596C00FECB0B /* DittoSwift */,
+				1198F11E2E71BDA200FECB0B /* DittoAllToolsMenu */,
 			);
 			productName = SwiftUIInventory;
 			productReference = 1198F0C12E6F30DF00FECB0B /* SwiftUIInventory.app */;
@@ -204,6 +207,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				1198F0F42E70596C00FECB0B /* XCRemoteSwiftPackageReference "DittoSwiftPackage" */,
+				1198F11D2E71BDA200FECB0B /* XCRemoteSwiftPackageReference "DittoSwiftTools" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1198F0C22E6F30DF00FECB0B /* Products */;
@@ -599,6 +603,14 @@
 				minimumVersion = 4.12.1;
 			};
 		};
+		1198F11D2E71BDA200FECB0B /* XCRemoteSwiftPackageReference "DittoSwiftTools" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getditto/DittoSwiftTools.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.1.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -606,6 +618,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 1198F0F42E70596C00FECB0B /* XCRemoteSwiftPackageReference "DittoSwiftPackage" */;
 			productName = DittoSwift;
+		};
+		1198F11E2E71BDA200FECB0B /* DittoAllToolsMenu */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1198F11D2E71BDA200FECB0B /* XCRemoteSwiftPackageReference "DittoSwiftTools" */;
+			productName = DittoAllToolsMenu;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

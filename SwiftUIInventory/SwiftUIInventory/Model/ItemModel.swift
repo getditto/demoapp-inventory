@@ -46,6 +46,18 @@ struct ItemModel: Codable, Hashable {
         try container.encode(title, forKey: .title)
         try container.encode(price, forKey: .price)
         try container.encode(detail, forKey: .detail)
+        // We specifically do not want to encode count that is updated with PN_INCREMENT
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(ItemCompositeKey.self, forKey: .id)
+        self.imageName = try container.decode(String.self, forKey: .imageName)
+        self.title = try container.decode(String.self, forKey: .title)
+        self.price = try container.decode(Double.self, forKey: .price)
+        self.detail = try container.decode(String.self, forKey: .detail)
+        let count = try container.decodeIfPresent(Double.self, forKey: .count)
+        self.count = count ?? 0.0
     }
 
     func hash(into hasher: inout Hasher) {

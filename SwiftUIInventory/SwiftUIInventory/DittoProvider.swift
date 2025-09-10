@@ -24,6 +24,7 @@ final actor DittoManager {
         guard let authURL = URL(string: Env.AUTH_URL) else { throw AppError.message("Auth URL not found") }
         let config = DittoConfig(databaseID: Env.APP_ID, connect: .server(url: authURL))
         let ditto = try await Ditto.open(config: config)
+        try ditto.disableSyncWithV3()
         self.dittoInstance = ditto
 
         ditto.auth?.expirationHandler = { ditto, secondsRemaining in

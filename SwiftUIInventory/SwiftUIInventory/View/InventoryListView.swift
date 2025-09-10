@@ -24,13 +24,19 @@ import SwiftUI
             .receive(on: DispatchQueue(label: "inventory-observer"))
             .tryMap { [weak self] items -> [InventoryListItemRowViewModel] in
                 guard let self else { throw AppError.message("") }
-                let rows = self.items
+                var updatedRows: [InventoryListItemRowViewModel] = []
+                
                 for item in items {
-                    let row = rows.first(where: { $0.item.id == item.id })
-                    row?.updateItem(item)
+                    if let existingRow = self.items.first(where: { $0.item.id == item.id }) {
+                        existingRow.updateItem(item)
+                        updatedRows.append(existingRow)
+                    } else {
+                        let newRow = InventoryListItemRowViewModel(item: item)
+                        updatedRows.append(newRow)
+                    }
                 }
 
-                return rows
+                return updatedRows
             }
             .receive(on: DispatchQueue.main)
             .sink(receiveCompletion: { completion in
@@ -67,6 +73,7 @@ struct InventoryListView: View {
                 List(viewModel.items) { item in
                     InventoryListRowView(viewModel: item)
                 }
+                .listStyle(.plain)
             } else {
                 Text("No items found")
             }
@@ -75,6 +82,7 @@ struct InventoryListView: View {
         .task {
             do {
                 await viewModel.dittoProvider.dittoManager.initializeSubscription()
+                try await viewModel.dittoProvider.dittoManager.setObserver()
                 try await viewModel.dittoProvider.dittoManager.startSync()
                 await viewModel.observeInventories()
                 try await viewModel.initializeInventory()
