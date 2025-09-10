@@ -7,53 +7,78 @@
 
 import SwiftUI
 
+@Observable final class InventoryListItemRowViewModel: Identifiable, Hashable, Equatable {
+    let id: UUID
+    private(set) var item: ItemModel
+    var count: Int
+
+    init(item: ItemModel) {
+        self.id = UUID()
+        self.item = item
+        self.count = Int(item.count)
+    }
+
+    func updateItem(_ item: ItemModel) {
+        self.item = item
+        self.count = Int(item.count)
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(item)
+    }
+
+    public static func == (lhs: InventoryListItemRowViewModel, rhs: InventoryListItemRowViewModel) -> Bool {
+        lhs.id == rhs.id &&
+        lhs.item == rhs.item
+    }
+}
+
 struct InventoryListRowView: View {
-    let item: ItemModel
-    @State private var count = 0
+    @Bindable var viewModel: InventoryListItemRowViewModel
 
     var body: some View {
         HStack {
-            Image("coke")
+            Image(viewModel.item.imageName)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 80, height: 100)
             VStack(alignment: .leading) {
                 HStack {
-                    Text(item.title)
+                    Text(viewModel.item.title)
                         .font(.title)
                         .fontWeight(.bold)
                     Spacer()
 
                 }
-                Text(item.detail)
+                Text(viewModel.item.detail)
                     .font(.body)
                     .fontWeight(.light)
                 let localCurrencyCode = Locale.current.currency?.identifier ?? "USD"
-                Text(item.price, format: .currency(code: localCurrencyCode))
+                Text(viewModel.item.price, format: .currency(code: localCurrencyCode))
                     .font(.title)
 
             }
             VStack {
                 Text("Quantity:")
                     .font(.headline)
-                CustomStepper(value: $count)
+                CustomStepper(value: $viewModel.count)
             }
-        }
-        .onAppear {
-            count = Int(item.count)
         }
     }
 }
 
 #Preview {
     InventoryListRowView(
-        item: ItemModel(
-            id: UUID().uuidString,
-            imageName: "coke",
-            title: "Coca-Cola",
-            price: 2.50,
-            detail: "A can of Coca-Cola",
-            count: 3
+        viewModel: InventoryListItemRowViewModel(
+            item: ItemModel(
+                id: UUID().uuidString,
+                imageName: "coke",
+                title: "Coca-Cola",
+                price: 2.50,
+                detail: "A can of Coca-Cola",
+                count: 3
+            )
         )
     )
 }

@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum AppError: Error {
+enum AppError: LocalizedError {
     case message(String)
 
     var localizedDescription: String {
