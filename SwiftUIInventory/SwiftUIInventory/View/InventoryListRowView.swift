@@ -12,54 +12,47 @@ import SwiftUI
         item.id.id
     }
     private(set) var item: ItemModel
-    var stock: Int
 
     init(item: ItemModel) {
         self.item = item
-        self.stock = Int(item.stock)
     }
 
     func updateItem(_ item: ItemModel) {
         self.item = item
-//        self.stock = Int(item.stock)
     }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
-//        hasher.combine(item)
-//        hasher.combine(stock)
     }
 
     public static func == (lhs: InventoryListItemRowViewModel, rhs: InventoryListItemRowViewModel) -> Bool {
         lhs.id == rhs.id
-//        lhs.item == rhs.item &&
-//        lhs.stock == rhs.stock
     }
 }
 
 struct InventoryListRowView: View {
-    var viewModel: InventoryListItemRowViewModel
+//    var viewModel: InventoryListItemRowViewModel
+    var viewModel: ItemModel
     @State private var count = 0
 
     var countDidChange: (Int) -> Void
 
     var body: some View {
         HStack {
-            Image(viewModel.item.imageName)
+            Image(viewModel.imageName)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 80, height: 100)
             VStack(alignment: .leading) {
-                Text(viewModel.item.title)
+                Text(viewModel.title)
                     .font(.title)
                     .fontWeight(.bold)
-                Text(viewModel.item.detail)
+                Text(viewModel.detail)
                     .font(.body)
                     .fontWeight(.light)
                 let localCurrencyCode = Locale.current.currency?.identifier ?? "USD"
-                Text(viewModel.item.price, format: .currency(code: localCurrencyCode))
+                Text(viewModel.price, format: .currency(code: localCurrencyCode))
                     .font(.title)
-
             }
             VStack {
                 Text("Quantity:")
@@ -68,7 +61,7 @@ struct InventoryListRowView: View {
             }
         }
         .task {
-            count = Int(viewModel.item.stock)
+            count = Int(viewModel.stock)
         }
         .onChange(of: count) { _, newValue in
             countDidChange(newValue)
@@ -78,8 +71,9 @@ struct InventoryListRowView: View {
 
 #Preview {
     InventoryListRowView(
-        viewModel: InventoryListItemRowViewModel(
-            item: ItemModel(
+//        viewModel: InventoryListItemRowViewModel(
+        viewModel: ItemModel(
+//            item: ItemModel(
                 id: "0",
                 imageName: "coke",
                 title: "Coca-Cola",
@@ -87,6 +81,6 @@ struct InventoryListRowView: View {
                 detail: "A can of Coca-Cola",
                 stock: 3
             )
-        )
+//        )
     ) { _ in }
 }

@@ -100,11 +100,11 @@ struct InventoryListView: View {
         NavigationStack(path: $navigationPath) {
             VStack {
                 if !viewModel.itemViewModels.isEmpty {
-//                    List([mockViewModel]) { itemViewModel in
+                    // List for some reason interferes with touch interaction.. using scrollview instead
                     ScrollView {
                         LazyVStack {
                             ForEach(viewModel.itemViewModels) { itemViewModel in
-                                InventoryListRowView(viewModel: itemViewModel) { count in
+                                InventoryListRowView(viewModel: itemViewModel.item) { count in
                                     Task {
                                         do {
                                             try await viewModel.incrementCount(listItem: itemViewModel, rowCount: count)
@@ -116,7 +116,6 @@ struct InventoryListView: View {
                             }
                         }
                     }
-//                    .listStyle(.plain)
                 } else {
                     Text("No items found")
                 }
@@ -134,14 +133,7 @@ struct InventoryListView: View {
             .navigationTitle("Inventory")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button(action: {
-                            // Sync action
-                            print("Sync tapped")
-                        }) {
-                            Label("Sync", systemImage: "arrow.clockwise")
-                        }
-                        
+                    Menu {                        
                         Button(action: {
                             Task {
                                 do {
