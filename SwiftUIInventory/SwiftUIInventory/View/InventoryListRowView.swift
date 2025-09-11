@@ -7,51 +7,27 @@
 
 import SwiftUI
 
-@Observable final class InventoryListItemRowViewModel: Identifiable, Hashable, Equatable {
-    var id: String {
-        item.id.id
-    }
-    private(set) var item: ItemModel
-
-    init(item: ItemModel) {
-        self.item = item
-    }
-
-    func updateItem(_ item: ItemModel) {
-        self.item = item
-    }
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-
-    public static func == (lhs: InventoryListItemRowViewModel, rhs: InventoryListItemRowViewModel) -> Bool {
-        lhs.id == rhs.id
-    }
-}
-
 struct InventoryListRowView: View {
-//    var viewModel: InventoryListItemRowViewModel
-    var viewModel: ItemModel
+    var model: ItemModel
     @State private var count = 0
 
     var countDidChange: (Int) -> Void
 
     var body: some View {
         HStack {
-            Image(viewModel.imageName)
+            Image(model.imageName)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 80, height: 100)
             VStack(alignment: .leading) {
-                Text(viewModel.title)
+                Text(model.title)
                     .font(.title)
                     .fontWeight(.bold)
-                Text(viewModel.detail)
+                Text(model.detail)
                     .font(.body)
                     .fontWeight(.light)
                 let localCurrencyCode = Locale.current.currency?.identifier ?? "USD"
-                Text(viewModel.price, format: .currency(code: localCurrencyCode))
+                Text(model.price, format: .currency(code: localCurrencyCode))
                     .font(.title)
             }
             VStack {
@@ -61,7 +37,7 @@ struct InventoryListRowView: View {
             }
         }
         .task {
-            count = Int(viewModel.stock)
+            count = Int(model.stock)
         }
         .onChange(of: count) { _, newValue in
             countDidChange(newValue)
@@ -72,7 +48,7 @@ struct InventoryListRowView: View {
 #Preview {
     InventoryListRowView(
 //        viewModel: InventoryListItemRowViewModel(
-        viewModel: ItemModel(
+        model: ItemModel(
 //            item: ItemModel(
                 id: "0",
                 imageName: "coke",

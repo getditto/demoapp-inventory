@@ -13,7 +13,7 @@ import DittoSwift
 @Observable final class InventoryListViewModel {
     let dittoProvider: DittoProvider
 
-    var itemViewModels: [InventoryListItemRowViewModel] = []
+    var itemModels: [ItemModel] = []
 
     @ObservationIgnored private(set) var inventoryObserver: AnyCancellable?
 
@@ -23,23 +23,6 @@ import DittoSwift
 
     func observeInventories() async {
         self.inventoryObserver = await dittoProvider.dittoManager.inventoryPublisher
-            .receive(on: DispatchQueue(label: "inventory-observer"))
-            .tryMap { [weak self] items -> [InventoryListItemRowViewModel] in
-                guard let self else { throw AppError.message("") }
-                var updatedRows: [InventoryListItemRowViewModel] = []
-                
-                for item in items {
-                    if let existingRow = self.itemViewModels.first(where: { $0.item.id == item.id }) {
-                        existingRow.updateItem(item)
-                        updatedRows.append(existingRow)
-                    } else {
-                        let newRow = InventoryListItemRowViewModel(item: item)
-                        updatedRows.append(newRow)
-                    }
-                }
-
-                return updatedRows
-            }
             .receive(on: DispatchQueue.main)
             .sink(receiveCompletion: { completion in
                 switch completion {
@@ -48,8 +31,8 @@ import DittoSwift
                 case .failure(let error):
                     print("Observer failed with error: \(error)")
                 }
-            }, receiveValue: { itemViewModels in
-                self.itemViewModels = itemViewModels
+            }, receiveValue: { itemModels in
+                self.itemModels = itemModels
             })
     }
 
@@ -66,10 +49,10 @@ import DittoSwift
         }
     }
 
-    func incrementCount(listItem: InventoryListItemRowViewModel, rowCount: Int) async throws {
-        let increment = Double(rowCount) - listItem.item.stock
-        print("DEBUG: Incrementing \(listItem.item.title) - UI stock: \(rowCount), DB stock: \(listItem.item.stock), increment: \(increment)")
-        try await dittoProvider.incrementCount(modelID: listItem.item.id, increment: increment)
+    func incrementCount(listItem: ItemModel, rowCount: Int) async throws {
+        let increment = Double(rowCount) - listItem.stock
+        print("DEBUG: Incrementing \(listItem.title) - UI stock: \(rowCount), DB stock: \(listItem.stock), increment: \(increment)")
+        try await dittoProvider.incrementCount(modelID: listItem.id, increment: increment)
     }
 
     deinit {
@@ -84,30 +67,18 @@ struct InventoryListView: View {
     @State private var navigationPath = NavigationPath()
     @State private var dittoInstance: Ditto?
 
-    var mockViewModel: InventoryListItemRowViewModel {
-        InventoryListItemRowViewModel(
-            item: ItemModel(
-                id: "0",
-                imageName: "coke",
-                title: "Coca-Cola",
-                price: 2.50,
-                detail: "A can of Coca-Cola"
-            )
-        )
-    }
-
     var body: some View {
         NavigationStack(path: $navigationPath) {
             VStack {
-                if !viewModel.itemViewModels.isEmpty {
+                if !viewModel.itemModels.isEmpty {
                     // List for some reason interferes with touch interaction.. using scrollview instead
                     ScrollView {
                         LazyVStack {
-                            ForEach(viewModel.itemViewModels) { itemViewModel in
-                                InventoryListRowView(viewModel: itemViewModel.item) { count in
+                            ForEach(viewModel.itemModels) { model in
+                                InventoryListRowView(model: model) { count in
                                     Task {
                                         do {
-                                            try await viewModel.incrementCount(listItem: itemViewModel, rowCount: count)
+                                            try await viewModel.incrementCount(listItem: model, rowCount: count)
                                         } catch {
                                             errorRouter.setError(AppError.message(error.localizedDescription))
                                         }

@@ -131,6 +131,7 @@ final actor DittoManager {
     }
 
     func incrementCount(modelID: ItemCompositeKey, increment: Double) async throws {
+        guard increment != 0 else { return }
         try await dittoManager.updateCounter(itemID: modelID, increment: increment)
     }
 }

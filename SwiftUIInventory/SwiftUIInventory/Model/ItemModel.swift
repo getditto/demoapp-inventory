@@ -13,7 +13,7 @@ struct ItemCompositeKey: Codable, Hashable {
     let price: String
 }
 
-struct ItemModel: Codable, Hashable {
+struct ItemModel: Codable, Hashable, Identifiable {
     let id: ItemCompositeKey
     let imageName: String
     let title: String
