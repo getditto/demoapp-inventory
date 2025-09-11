@@ -13,7 +13,7 @@ import DittoSwift
 @Observable final class InventoryListViewModel {
     let dittoProvider: DittoProvider
 
-    var items: [InventoryListItemRowViewModel] = []
+    var itemViewModels: [InventoryListItemRowViewModel] = []
 
     @ObservationIgnored private(set) var inventoryObserver: AnyCancellable?
 
@@ -29,7 +29,7 @@ import DittoSwift
                 var updatedRows: [InventoryListItemRowViewModel] = []
                 
                 for item in items {
-                    if let existingRow = self.items.first(where: { $0.item.id == item.id }) {
+                    if let existingRow = self.itemViewModels.first(where: { $0.item.id == item.id }) {
                         existingRow.updateItem(item)
                         updatedRows.append(existingRow)
                     } else {
@@ -48,8 +48,8 @@ import DittoSwift
                 case .failure(let error):
                     print("Observer failed with error: \(error)")
                 }
-            }, receiveValue: { items in
-                self.items = items
+            }, receiveValue: { itemViewModels in
+                self.itemViewModels = itemViewModels
             })
     }
 
@@ -64,6 +64,12 @@ import DittoSwift
         for item in ItemModel.initialModels {
             try await dittoProvider.insertInitialModel(model: item)
         }
+    }
+
+    func incrementCount(listItem: InventoryListItemRowViewModel) async throws {
+        let increment = Double(listItem.stock) - listItem.item.stock
+        print("DEBUG: Incrementing \(listItem.item.title) - UI stock: \(listItem.stock), DB stock: \(listItem.item.stock), increment: \(increment)")
+        try await dittoProvider.incrementCount(modelID: listItem.item.id, increment: increment)
     }
 
     deinit {
@@ -81,9 +87,19 @@ struct InventoryListView: View {
     var body: some View {
         NavigationStack(path: $navigationPath) {
             VStack {
-                if !viewModel.items.isEmpty {
-                    List(viewModel.items) { item in
-                        InventoryListRowView(viewModel: item)
+                if !viewModel.itemViewModels.isEmpty {
+                    List(viewModel.itemViewModels) { itemViewModel in
+                        InventoryListRowView(viewModel: itemViewModel)
+                            .onChange(of: itemViewModel.stock) { oldValue, newValue in
+                                print("DEBUG: onChange fired - old: \(oldValue), new: \(newValue)")
+                                Task {
+                                    do {
+                                        try await viewModel.incrementCount(listItem: itemViewModel)
+                                    } catch {
+                                        errorRouter.setError(AppError.message(error.localizedDescription))
+                                    }
+                                }
+                            }
                     }
                     .listStyle(.plain)
                 } else {

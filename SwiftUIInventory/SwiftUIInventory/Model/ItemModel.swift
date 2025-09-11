@@ -19,15 +19,15 @@ struct ItemModel: Codable, Hashable {
     let title: String
     let price: Double
     let detail: String
-    var count: Double
+    var stock: Double
 
-    init(id: String, imageName: String, title: String, price: Double, detail: String, count: Double = 0.0) {
+    init(id: String, imageName: String, title: String, price: Double, detail: String, stock: Double = 0.0) {
         self.id = ItemCompositeKey(id: id, title: title, price: String(price))
         self.imageName = imageName
         self.title = title
         self.price = price
         self.detail = detail
-        self.count = count
+        self.stock = stock
     }
 
     enum CodingKeys: String, CodingKey {
@@ -36,7 +36,7 @@ struct ItemModel: Codable, Hashable {
         case title
         case price
         case detail
-        case count
+        case stock
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -56,14 +56,14 @@ struct ItemModel: Codable, Hashable {
         self.title = try container.decode(String.self, forKey: .title)
         self.price = try container.decode(Double.self, forKey: .price)
         self.detail = try container.decode(String.self, forKey: .detail)
-        let count = try container.decodeIfPresent(Double.self, forKey: .count)
-        self.count = count ?? 0.0
+        let stock = try container.decodeIfPresent(Double.self, forKey: .stock)
+        self.stock = stock ?? 0.0
     }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
         hasher.combine(price)
-        hasher.combine(count)
+        hasher.combine(stock)
     }
 }
 

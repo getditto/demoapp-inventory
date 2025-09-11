@@ -129,4 +129,8 @@ final actor DittoManager {
     func insertInitialModel(model: ItemModel) async throws {
         try await dittoManager.insertInitialDocuments(document: model)
     }
+
+    func incrementCount(modelID: ItemCompositeKey, increment: Double) async throws {
+        try await dittoManager.updateCounter(itemID: modelID, increment: increment)
+    }
 }

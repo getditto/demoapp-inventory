@@ -12,16 +12,16 @@ import SwiftUI
         item.id.id
     }
     private(set) var item: ItemModel
-    var count: Int
+    var stock: Int
 
     init(item: ItemModel) {
         self.item = item
-        self.count = Int(item.count)
+        self.stock = Int(item.stock)
     }
 
     func updateItem(_ item: ItemModel) {
         self.item = item
-        self.count = Int(item.count)
+        self.stock = Int(item.stock)
     }
 
     func hash(into hasher: inout Hasher) {
@@ -59,7 +59,7 @@ struct InventoryListRowView: View {
             VStack {
                 Text("Quantity:")
                     .font(.headline)
-                CustomStepper(value: $viewModel.count)
+                CustomStepper(value: $viewModel.stock)
             }
         }
     }
@@ -74,7 +74,7 @@ struct InventoryListRowView: View {
                 title: "Coca-Cola",
                 price: 2.50,
                 detail: "A can of Coca-Cola",
-                count: 3
+                stock: 3
             )
         )
     )
