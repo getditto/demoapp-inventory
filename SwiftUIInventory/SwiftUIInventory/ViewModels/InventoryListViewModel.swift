@@ -7,7 +7,6 @@
 
 import SwiftUI
 import Combine
-//import DittoSwift
 
 @Observable final class InventoryListViewModel {
     let dittoProvider: DittoProvider
@@ -22,6 +21,12 @@ import Combine
 
     func observeInventories() async {
         self.inventoryObserver = await dittoProvider.dittoManager.inventoryPublisher
+            .receive(on: DispatchQueue(label: "custom-queue-inventory"))
+            .tryMap { [weak self] result in
+                // Here we can handle any complex logic off the main thread
+                guard let self else { throw AppError.message("Generic unwrap error") }
+                return result
+            }
             .receive(on: DispatchQueue.main)
             .sink(receiveCompletion: { completion in
                 switch completion {
