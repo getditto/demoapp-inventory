@@ -70,11 +70,11 @@ struct ItemModel: Codable, Hashable {
 extension ItemModel {
     static var initialModels: [ItemModel] {
         [
-            ItemModel(id: UUID().uuidString, imageName: "coke", title: "Coca-Cola", price: 2.50, detail: "A Can of Coca-Cola"),
-            ItemModel(id: UUID().uuidString, imageName: "drpepper", title: "Dr. Pepper", price: 2.50, detail: "A Can of Dr. Pepper"),
-            ItemModel(id: UUID().uuidString, imageName: "lays", title: "Lay's Classic", price: 3.99, detail: "Original Classic Lay's Bag of Chips"),
-            ItemModel(id: UUID().uuidString, imageName: "brownies", title: "Brownies", price: 6.50, detail: "Brownies, Diet Sugar Free Version"),
-            ItemModel(id: UUID().uuidString, imageName: "blt", title: "Classic BLT Egg", price: 2.50, detail: "Contains Egg, Meats and Dairy")
+            ItemModel(id: "0", imageName: "coke", title: "Coca-Cola", price: 2.50, detail: "A Can of Coca-Cola"),
+            ItemModel(id: "1", imageName: "drpepper", title: "Dr. Pepper", price: 2.50, detail: "A Can of Dr. Pepper"),
+            ItemModel(id: "2", imageName: "lays", title: "Lay's Classic", price: 3.99, detail: "Original Classic Lay's Bag of Chips"),
+            ItemModel(id: "3", imageName: "brownies", title: "Brownies", price: 6.50, detail: "Brownies, Diet Sugar Free Version"),
+            ItemModel(id: "4", imageName: "blt", title: "Classic BLT Egg", price: 2.50, detail: "Contains Egg, Meats and Dairy")
         ]
     }
 }

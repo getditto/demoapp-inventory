@@ -8,12 +8,13 @@
 import SwiftUI
 
 @Observable final class InventoryListItemRowViewModel: Identifiable, Hashable, Equatable {
-    let id: UUID
+    var id: String {
+        item.id.id
+    }
     private(set) var item: ItemModel
     var count: Int
 
     init(item: ItemModel) {
-        self.id = UUID()
         self.item = item
         self.count = Int(item.count)
     }
@@ -68,7 +69,7 @@ struct InventoryListRowView: View {
     InventoryListRowView(
         viewModel: InventoryListItemRowViewModel(
             item: ItemModel(
-                id: UUID().uuidString,
+                id: "0",
                 imageName: "coke",
                 title: "Coca-Cola",
                 price: 2.50,

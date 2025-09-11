@@ -88,11 +88,15 @@ final actor DittoManager {
         let data = try JSONEncoder().encode(document)
         let object = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         try await dittoInstance.store.execute(
-            query: "INSERT INTO inventories INITIAL DOCUMENTS (:document)",
+            query: "INSERT INTO inventories DOCUMENTS (:document) ON ID CONFLICT DO UPDATE",
             arguments: [
                 "document": object
             ]
         )
+    }
+
+    func deleteAllDocuments() async throws {
+        try await dittoInstance.store.execute(query: "DELETE FROM inventories")
     }
 
     func terminateObserver() {
@@ -111,6 +115,12 @@ final actor DittoManager {
 
 @Observable final class DittoProvider {
     private(set) var dittoManager: DittoManager
+
+    var ditto: Ditto {
+        get async {
+            await dittoManager.dittoInstance
+        }
+    }
 
     init() async throws {
         self.dittoManager = try await DittoManager()
