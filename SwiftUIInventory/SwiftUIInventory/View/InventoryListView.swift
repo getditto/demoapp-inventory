@@ -5,67 +5,16 @@
 //  Created by Alexander on 2025-09-08.
 //
 
-import Combine
 import SwiftUI
 import DittoAllToolsMenu
 import DittoSwift
-
-@Observable final class InventoryListViewModel {
-    let dittoProvider: DittoProvider
-
-    var itemModels: [ItemModel] = []
-
-    @ObservationIgnored private(set) var inventoryObserver: AnyCancellable?
-
-    init(dittoProvider: DittoProvider) {
-        self.dittoProvider = dittoProvider
-    }
-
-    func observeInventories() async {
-        self.inventoryObserver = await dittoProvider.dittoManager.inventoryPublisher
-            .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    break
-                case .failure(let error):
-                    print("Observer failed with error: \(error)")
-                }
-            }, receiveValue: { observerResult in
-                self.itemModels = observerResult.results
-                observerResult.signalNext()
-            })
-    }
-
-    func initializeInventory() async throws {
-        for item in ItemModel.initialModels {
-            try await dittoProvider.insertInitialModel(model: item)
-        }
-    }
-    
-    func resetInventory() async throws {
-        try await dittoProvider.dittoManager.deleteAllDocuments()
-        for item in ItemModel.initialModels {
-            try await dittoProvider.insertInitialModel(model: item)
-        }
-    }
-
-    func incrementCount(listItem: ItemModel, rowCount: Int) async throws {
-        let increment = Double(rowCount) - listItem.stock
-        print("DEBUG: Incrementing \(listItem.title) - UI stock: \(rowCount), DB stock: \(listItem.stock), increment: \(increment)")
-        try await dittoProvider.incrementCount(modelID: listItem.id, increment: increment)
-    }
-
-    deinit {
-        inventoryObserver?.cancel()
-        inventoryObserver = nil
-    }
-}
 
 struct InventoryListView: View {
     @Environment(ErrorRouter.self) private var errorRouter
     @Bindable var viewModel: InventoryListViewModel
     @State private var navigationPath = NavigationPath()
+    // No easy way to get around this, we need to pass the ditto instance
+    // into all tools menu, access is async so cannot access inside the body (sync)
     @State private var dittoInstance: Ditto?
 
     var body: some View {
@@ -111,7 +60,15 @@ struct InventoryListView: View {
             .navigationTitle("Inventory")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {                        
+                    Menu {
+                        Button(action: {
+                            errorRouter.setError(AppError.message("Testing Error Alert"))
+                        }) {
+                            Label("Test Error", systemImage: "exclamationmark.triangle")
+                        }
+
+                        Divider()
+
                         Button(action: {
                             Task {
                                 do {
