@@ -66,9 +66,9 @@ import DittoSwift
         }
     }
 
-    func incrementCount(listItem: InventoryListItemRowViewModel) async throws {
-        let increment = Double(listItem.stock) - listItem.item.stock
-        print("DEBUG: Incrementing \(listItem.item.title) - UI stock: \(listItem.stock), DB stock: \(listItem.item.stock), increment: \(increment)")
+    func incrementCount(listItem: InventoryListItemRowViewModel, rowCount: Int) async throws {
+        let increment = Double(rowCount) - listItem.item.stock
+        print("DEBUG: Incrementing \(listItem.item.title) - UI stock: \(rowCount), DB stock: \(listItem.item.stock), increment: \(increment)")
         try await dittoProvider.incrementCount(modelID: listItem.item.id, increment: increment)
     }
 
@@ -84,24 +84,39 @@ struct InventoryListView: View {
     @State private var navigationPath = NavigationPath()
     @State private var dittoInstance: Ditto?
 
+    var mockViewModel: InventoryListItemRowViewModel {
+        InventoryListItemRowViewModel(
+            item: ItemModel(
+                id: "0",
+                imageName: "coke",
+                title: "Coca-Cola",
+                price: 2.50,
+                detail: "A can of Coca-Cola"
+            )
+        )
+    }
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
             VStack {
                 if !viewModel.itemViewModels.isEmpty {
-                    List(viewModel.itemViewModels) { itemViewModel in
-                        InventoryListRowView(viewModel: itemViewModel)
-                            .onChange(of: itemViewModel.stock) { oldValue, newValue in
-                                print("DEBUG: onChange fired - old: \(oldValue), new: \(newValue)")
-                                Task {
-                                    do {
-                                        try await viewModel.incrementCount(listItem: itemViewModel)
-                                    } catch {
-                                        errorRouter.setError(AppError.message(error.localizedDescription))
+//                    List([mockViewModel]) { itemViewModel in
+                    ScrollView {
+                        LazyVStack {
+                            ForEach(viewModel.itemViewModels) { itemViewModel in
+                                InventoryListRowView(viewModel: itemViewModel) { count in
+                                    Task {
+                                        do {
+                                            try await viewModel.incrementCount(listItem: itemViewModel, rowCount: count)
+                                        } catch {
+                                            errorRouter.setError(AppError.message(error.localizedDescription))
+                                        }
                                     }
                                 }
                             }
+                        }
                     }
-                    .listStyle(.plain)
+//                    .listStyle(.plain)
                 } else {
                     Text("No items found")
                 }

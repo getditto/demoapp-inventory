@@ -21,22 +21,27 @@ import SwiftUI
 
     func updateItem(_ item: ItemModel) {
         self.item = item
-        self.stock = Int(item.stock)
+//        self.stock = Int(item.stock)
     }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
-        hasher.combine(item)
+//        hasher.combine(item)
+//        hasher.combine(stock)
     }
 
     public static func == (lhs: InventoryListItemRowViewModel, rhs: InventoryListItemRowViewModel) -> Bool {
-        lhs.id == rhs.id &&
-        lhs.item == rhs.item
+        lhs.id == rhs.id
+//        lhs.item == rhs.item &&
+//        lhs.stock == rhs.stock
     }
 }
 
 struct InventoryListRowView: View {
-    @Bindable var viewModel: InventoryListItemRowViewModel
+    var viewModel: InventoryListItemRowViewModel
+    @State private var count = 0
+
+    var countDidChange: (Int) -> Void
 
     var body: some View {
         HStack {
@@ -59,8 +64,14 @@ struct InventoryListRowView: View {
             VStack {
                 Text("Quantity:")
                     .font(.headline)
-                CustomStepper(value: $viewModel.stock)
+                CustomStepper(value: $count)
             }
+        }
+        .task {
+            count = Int(viewModel.item.stock)
+        }
+        .onChange(of: count) { _, newValue in
+            countDidChange(newValue)
         }
     }
 }
@@ -77,5 +88,5 @@ struct InventoryListRowView: View {
                 stock: 3
             )
         )
-    )
+    ) { _ in }
 }
