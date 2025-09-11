@@ -75,15 +75,21 @@ struct InventoryListView: View {
                     ScrollView {
                         LazyVStack {
                             ForEach(viewModel.itemModels) { model in
-                                InventoryListRowView(model: model) { count in
-                                    Task {
-                                        do {
-                                            try await viewModel.incrementCount(listItem: model, rowCount: count)
-                                        } catch {
-                                            errorRouter.setError(AppError.message(error.localizedDescription))
+                                VStack {
+                                    InventoryListRowView(model: model) { count in
+                                        Task {
+                                            do {
+                                                try await viewModel.incrementCount(listItem: model, rowCount: count)
+                                            } catch {
+                                                errorRouter.setError(AppError.message(error.localizedDescription))
+                                            }
                                         }
                                     }
+                                    if let lastItem = viewModel.itemModels.last, model != lastItem {
+                                        Divider()
+                                    }
                                 }
+                                .padding(.horizontal, 6)
                             }
                         }
                     }

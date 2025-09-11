@@ -22,46 +22,45 @@ struct CustomStepper: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            Button(action: decrementValue) {
-                ZStack {
-                    Circle()
-                        .fill(value > 0 ? Color.red : Color.gray.opacity(0.3))
-                        .frame(width: 44, height: 44)
+        VStack {
+            Text("\(value)")
+                .font(.system(size: 25, weight: .bold))
+                .foregroundColor(.primary)
+                .frame(minWidth: 45, alignment: .center)
+                .transition(.asymmetric(
+                    insertion: .move(edge: animationDirection == .up ? .top : .bottom)
+                        .combined(with: .opacity),
+                    removal: .move(edge: animationDirection == .up ? .bottom : .top)
+                        .combined(with: .opacity)
+                ))
+                .id("value-\(value)")
 
-                    Image(systemName: "minus")
-                        .font(.title3.bold())
-                        .foregroundColor(.white)
+            HStack(spacing: 8) {
+                Button(action: decrementValue) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(value > 0 ? Color.red : Color.gray.opacity(0.3))
+                            .frame(width: 40, height: 40)
+
+                        Image(systemName: "minus")
+                            .font(.title3.bold())
+                            .foregroundColor(.white)
+                    }
                 }
-            }
-            .disabled(value <= 0)
-            .scaleEffect(value > 0 ? 1.0 : 0.8)
-            .animation(.easeInOut(duration: 0.1), value: value)
+                .disabled(value <= 0)
+                .scaleEffect(value > 0 ? 1.0 : 0.8)
+                .animation(.easeInOut(duration: 0.1), value: value)
 
-            ZStack {
-                Text("\(value)")
-                    .font(.title.bold())
-                    .foregroundColor(.primary)
-                    .frame(minWidth: 45)
-                    .transition(.asymmetric(
-                        insertion: .move(edge: animationDirection == .up ? .top : .bottom)
-                            .combined(with: .opacity),
-                        removal: .move(edge: animationDirection == .up ? .bottom : .top)
-                            .combined(with: .opacity)
-                    ))
-                    .id("value-\(value)")
-            }
-            .clipped()
+                Button(action: incrementValue) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(Color.blue)
+                            .frame(width: 40, height: 40)
 
-            Button(action: incrementValue) {
-                ZStack {
-                    Circle()
-                        .fill(Color.blue)
-                        .frame(width: 44, height: 44)
-
-                    Image(systemName: "plus")
-                        .font(.title3.bold())
-                        .foregroundColor(.white)
+                        Image(systemName: "plus")
+                            .font(.title3.bold())
+                            .foregroundColor(.white)
+                    }
                 }
             }
         }

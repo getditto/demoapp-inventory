@@ -14,26 +14,28 @@ struct InventoryListRowView: View {
     var countDidChange: (Int) -> Void
 
     var body: some View {
-        HStack {
-            Image(model.imageName)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 80, height: 100)
-            VStack(alignment: .leading) {
-                Text(model.title)
-                    .font(.title)
-                    .fontWeight(.bold)
-                Text(model.detail)
-                    .font(.body)
-                    .fontWeight(.light)
-                let localCurrencyCode = Locale.current.currency?.identifier ?? "USD"
-                Text(model.price, format: .currency(code: localCurrencyCode))
-                    .font(.title)
-            }
-            VStack {
-                Text("Quantity:")
-                    .font(.headline)
-                CustomStepper(value: $count)
+        VStack(alignment: .trailing) {
+            HStack {
+                Image(model.imageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 120, height: 120)
+                    .clipped()
+                VStack(alignment: .leading) {
+                    Text(model.title)
+                        .font(.system(size: 25, weight: .bold))
+                    Text(model.detail)
+                        .font(.system(size: 18, weight: .light))
+                    let localCurrencyCode = Locale.current.currency?.identifier ?? "USD"
+                    Text(model.price, format: .currency(code: localCurrencyCode))
+                        .font(.system(size: 18))
+                }
+                Spacer()
+                VStack {
+                    Text("Quantity:")
+                        .font(.system(size: 18, weight: .light))
+                    CustomStepper(value: $count)
+                }
             }
         }
         .task {
@@ -47,9 +49,7 @@ struct InventoryListRowView: View {
 
 #Preview {
     InventoryListRowView(
-//        viewModel: InventoryListItemRowViewModel(
         model: ItemModel(
-//            item: ItemModel(
                 id: "0",
                 imageName: "coke",
                 title: "Coca-Cola",
@@ -57,6 +57,5 @@ struct InventoryListRowView: View {
                 detail: "A can of Coca-Cola",
                 stock: 3
             )
-//        )
     ) { _ in }
 }
