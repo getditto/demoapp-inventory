@@ -24,6 +24,8 @@ import Combine
             .receive(on: DispatchQueue(label: "custom-queue-inventory"))
             .tryMap { [weak self] result in
                 // Here we can handle any complex logic off the main thread
+                // Whatever you logic is if the validation ends the process
+                // DON'T FORGET to trigger SIGNALNEXT before throwing the error.
                 guard let self else { throw AppError.message("Generic unwrap error") }
                 return result
             }
