@@ -11,14 +11,19 @@ struct CustomStepper: View {
     @Binding var value: Int
     let step: Int
     @State private var animationDirection: AnimationDirection = .none
+    var externalDirection: AnimationDirection? = nil
 
     enum AnimationDirection {
         case none, up, down
     }
 
-    init(value: Binding<Int>, step: Int = 1) {
+    init(value: Binding<Int>, step: Int = 1, externalDirection: AnimationDirection? = nil) {
         self._value = value
         self.step = step
+        self.externalDirection = externalDirection
+        if let externalDirection {
+            self.animationDirection = externalDirection
+        }
     }
 
     var body: some View {
@@ -28,9 +33,9 @@ struct CustomStepper: View {
                 .foregroundColor(.primary)
                 .frame(minWidth: 45, alignment: .center)
                 .transition(.asymmetric(
-                    insertion: .move(edge: animationDirection == .up ? .top : .bottom)
+                    insertion: .move(edge: (externalDirection ?? animationDirection) == .up ? .top : .bottom)
                         .combined(with: .opacity),
-                    removal: .move(edge: animationDirection == .up ? .bottom : .top)
+                    removal: .move(edge: (externalDirection ?? animationDirection) == .up ? .bottom : .top)
                         .combined(with: .opacity)
                 ))
                 .id("value-\(value)")

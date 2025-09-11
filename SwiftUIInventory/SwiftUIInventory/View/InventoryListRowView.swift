@@ -11,6 +11,7 @@ struct InventoryListRowView: View {
     var model: ItemModel
     @State private var count = 0
     @State private var flashAnimation = false
+    @State private var animationDirection: CustomStepper.AnimationDirection = .none
 
     var countDidChange: (Int) -> Void
 
@@ -35,7 +36,7 @@ struct InventoryListRowView: View {
                 VStack {
                     Text("Quantity:")
                         .font(.system(size: 18, weight: .light))
-                    CustomStepper(value: $count)
+                    CustomStepper(value: $count, externalDirection: animationDirection)
                 }
             }
         }
@@ -44,7 +45,8 @@ struct InventoryListRowView: View {
         .task {
             count = Int(model.stock)
         }
-        .onChange(of: model.stock, { _, newValue in
+        .onChange(of: model.stock, { oldValue, newValue in
+            animationDirection = oldValue < newValue ? .up : .down
             count = Int(newValue)
             flashAnimation = true
             toggleFlashOff()
