@@ -31,8 +31,9 @@ import DittoSwift
                 case .failure(let error):
                     print("Observer failed with error: \(error)")
                 }
-            }, receiveValue: { itemModels in
-                self.itemModels = itemModels
+            }, receiveValue: { observerResult in
+                self.itemModels = observerResult.results
+                observerResult.signalNext()
             })
     }
 

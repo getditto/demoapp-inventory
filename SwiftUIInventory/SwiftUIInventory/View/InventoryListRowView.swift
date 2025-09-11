@@ -10,6 +10,7 @@ import SwiftUI
 struct InventoryListRowView: View {
     var model: ItemModel
     @State private var count = 0
+    @State private var flashAnimation = false
 
     var countDidChange: (Int) -> Void
 
@@ -38,11 +39,25 @@ struct InventoryListRowView: View {
                 }
             }
         }
+        .background(flashAnimation ? Color.gray.opacity(0.3) : Color.clear)
+        .animation(.easeInOut(duration: 0.3), value: flashAnimation)
         .task {
             count = Int(model.stock)
         }
+        .onChange(of: model.stock, { _, newValue in
+            count = Int(newValue)
+            flashAnimation = true
+            toggleFlashOff()
+        })
         .onChange(of: count) { _, newValue in
+            guard count != Int(model.stock) else { return }
             countDidChange(newValue)
+        }
+    }
+
+    private func toggleFlashOff() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            flashAnimation = false
         }
     }
 }

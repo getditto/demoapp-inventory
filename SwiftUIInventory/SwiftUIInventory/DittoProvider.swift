@@ -9,14 +9,24 @@ import Combine
 import DittoSwift
 import SwiftUI
 
+struct ObserverResult<T: Codable> {
+    let results: [T]
+    let signalNext: () -> Void
+
+    init(results: [T], signalNext: @escaping () -> Void) {
+        self.results = results
+        self.signalNext = signalNext
+    }
+}
+
 final actor DittoManager {
     private(set) var dittoInstance: Ditto
     private var subscriptions = [DittoSyncSubscription]()
     private var inventoryObserver: DittoStoreObserver?
 
-    let passthroughSubject = PassthroughSubject<[ItemModel], Never>()
+    let passthroughSubject = PassthroughSubject<ObserverResult<ItemModel>, Never>()
 
-    var inventoryPublisher: AnyPublisher<[ItemModel], Never> {
+    var inventoryPublisher: AnyPublisher<ObserverResult<ItemModel>, Never> {
         passthroughSubject.eraseToAnyPublisher()
     }
 
@@ -56,7 +66,7 @@ final actor DittoManager {
 
     func setObserver() throws {
         guard inventoryObserver == nil else { throw AppError.message("Inventory observer is already active") }
-        inventoryObserver = try dittoInstance.store.registerObserver(query: "SELECT * FROM inventories") { [weak self] result in
+        inventoryObserver = try dittoInstance.store.registerObserver(query: "SELECT * FROM inventories", handlerWithSignalNext: { [weak self] result, signalNext in
             Task {
                 guard let self else { return }
                 let decodedItems = result.items.compactMap { item -> ItemModel? in
@@ -68,9 +78,9 @@ final actor DittoManager {
                         return nil
                     }
                 }
-                await self.passthroughSubject.send(decodedItems)
+                await self.passthroughSubject.send(ObserverResult(results: decodedItems, signalNext: signalNext))
             }
-        }
+        })
     }
 
     func updateCounter(itemID: Codable, increment: Double = 1.0) async throws {
