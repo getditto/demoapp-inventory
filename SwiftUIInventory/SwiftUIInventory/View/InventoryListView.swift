@@ -109,6 +109,8 @@ struct InventoryListView: View {
             do {
                 dittoInstance = await viewModel.dittoProvider.ditto
                 await viewModel.dittoProvider.dittoManager.initializeSubscription()
+                // Order here matters, because we are installing a data pipeline,
+                // you want the pipeline in place before you start the dittoObserver
                 await viewModel.observeInventories()
                 try await viewModel.initializeInventory()
                 try await viewModel.dittoProvider.dittoManager.setObserver()
