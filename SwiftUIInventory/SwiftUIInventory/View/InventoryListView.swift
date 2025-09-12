@@ -13,9 +13,6 @@ struct InventoryListView: View {
     @Environment(ErrorRouter.self) private var errorRouter
     @Bindable var viewModel: InventoryListViewModel
     @State private var navigationPath = NavigationPath()
-    // No easy way to get around this, we need to pass the ditto instance
-    // into all tools menu, access is async so cannot access inside the body (sync)
-    @State private var dittoInstance: Ditto?
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -107,7 +104,6 @@ struct InventoryListView: View {
         }
         .task {
             do {
-                dittoInstance = await viewModel.dittoProvider.ditto
                 await viewModel.dittoProvider.dittoManager.initializeSubscription()
                 // Order here matters, because we are installing a data pipeline,
                 // you want the pipeline in place before you start the dittoObserver
