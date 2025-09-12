@@ -54,7 +54,7 @@ final actor DittoManager {
     @discardableResult func initializeSubscription() -> DittoSyncSubscription? {
         do {
             guard subscriptions.isEmpty else { throw AppError.message("Subscription is already active") }
-            let sub = try dittoInstance.sync.registerSubscription(query: "SELECT * FROM inventories")
+            let sub = try dittoInstance.sync.registerSubscription(query: "SELECT * FROM inventories WHERE _id.locationID = 'ditto-hq'")
             subscriptions.append(sub)
             try startSync()
             return sub

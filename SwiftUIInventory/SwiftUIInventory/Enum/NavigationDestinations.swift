@@ -6,7 +6,18 @@
 //
 
 import Foundation
+import DittoSwift
 
-enum NavigationDestination: String, Hashable {
-    case tools
+enum NavigationDestination: Hashable {
+    case tools(Ditto)
+}
+
+extension Ditto: @retroactive Equatable, @retroactive Hashable {
+    public static func == (lhs: Ditto, rhs: Ditto) -> Bool {
+        return lhs.appID == rhs.appID
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(appID)
+    }
 }

@@ -10,7 +10,12 @@ import SwiftUI
 @main
 struct SwiftUIInventoryApp: App {
     @State private var listViewModel: InventoryListViewModel?
+    /// DittoProvider is an Observable such that we can pass this down a view hierarchy through the Environment
+    /// using the latest environment APIs without separately creating an environment key.
     @State private var dittoProvider: DittoProvider?
+    /// The error router is an example of passing an observable through the view hierarchy
+    /// FYI, navigation pushes are part of the same hierarchy, however a presented view is a new hierarchy and so the object
+    /// will need to be explicitly passed again.
     @State private var errorRouter = ErrorRouter()
 
     var body: some Scene {

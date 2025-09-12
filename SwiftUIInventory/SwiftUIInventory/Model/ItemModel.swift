@@ -11,6 +11,7 @@ struct ItemCompositeKey: Codable, Hashable {
     let id: String
     let title: String
     let price: String
+    let locationID: String
 }
 
 struct ItemModel: Codable, Hashable, Identifiable {
@@ -22,7 +23,7 @@ struct ItemModel: Codable, Hashable, Identifiable {
     var stock: Double
 
     init(id: String, imageName: String, title: String, price: Double, detail: String, stock: Double = 0.0) {
-        self.id = ItemCompositeKey(id: id, title: title, price: String(price))
+        self.id = ItemCompositeKey(id: id, title: title, price: String(price), locationID: "ditto-hq")
         self.imageName = imageName
         self.title = title
         self.price = price

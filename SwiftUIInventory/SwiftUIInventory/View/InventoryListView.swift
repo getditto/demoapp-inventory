@@ -49,12 +49,8 @@ struct InventoryListView: View {
             }
             .navigationDestination(for: NavigationDestination.self, destination: { destination in
                 switch destination {
-                case .tools:
-                    if let dittoInstance {
-                        AllToolsMenu(ditto: dittoInstance)
-                    } else {
-                        ProgressView("Loading...")
-                    }
+                case .tools(let dittoInstance):
+                    AllToolsMenu(ditto: dittoInstance)
                 }
             })
             .navigationTitle("Inventory")
@@ -97,8 +93,8 @@ struct InventoryListView: View {
                         
                         Button(action: {
                             Task {
-                                dittoInstance = await viewModel.dittoProvider.ditto
-                                navigationPath.append(NavigationDestination.tools)
+                                let dittoInstance = await viewModel.dittoProvider.ditto
+                                navigationPath.append(NavigationDestination.tools(dittoInstance))
                             }
                         }) {
                             Label("Ditto Tools", systemImage: "gearshape")
@@ -113,10 +109,9 @@ struct InventoryListView: View {
             do {
                 dittoInstance = await viewModel.dittoProvider.ditto
                 await viewModel.dittoProvider.dittoManager.initializeSubscription()
-                try await viewModel.dittoProvider.dittoManager.setObserver()
-                try await viewModel.dittoProvider.dittoManager.startSync()
                 await viewModel.observeInventories()
                 try await viewModel.initializeInventory()
+                try await viewModel.dittoProvider.dittoManager.setObserver()
             } catch {
                 errorRouter.setError(AppError.message(error.localizedDescription))
             }
