@@ -23,18 +23,18 @@ struct SwiftUIInventoryApp: App {
             Group {
                 if let listViewModel {
                     InventoryListView(viewModel: listViewModel)
-                        .alert(isPresented: $errorRouter.presentError, error: errorRouter.error, actions: {
-                            Button {
-                                errorRouter.clearError()
-                            } label: {
-                                Text("OK")
-                            }
-                        })
                         .environment(errorRouter)
                 } else {
                     Image("inventory_launch")
                 }
             }
+            .alert(isPresented: $errorRouter.presentError, error: errorRouter.error, actions: {
+                Button {
+                    errorRouter.clearError()
+                } label: {
+                    Text("OK")
+                }
+            })
             .task {
                 do {
                     let dittoProvider = try await DittoProvider()
