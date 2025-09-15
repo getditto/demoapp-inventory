@@ -1,0 +1,81 @@
+//
+//  Items.swift
+//  SwiftUIInventory
+//
+//  Created by Alexander on 2025-09-09.
+//
+
+import Foundation
+
+struct ItemCompositeKey: Codable, Hashable {
+    let id: String
+    let title: String
+    let price: String
+    let locationID: String
+}
+
+struct ItemModel: Codable, Hashable, Identifiable {
+    let id: ItemCompositeKey
+    let imageName: String
+    let title: String
+    let price: Double
+    let detail: String
+    var stock: Double
+
+    init(id: String, imageName: String, title: String, price: Double, detail: String, stock: Double = 0.0) {
+        self.id = ItemCompositeKey(id: id, title: title, price: String(price), locationID: "ditto-hq")
+        self.imageName = imageName
+        self.title = title
+        self.price = price
+        self.detail = detail
+        self.stock = stock
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id = "_id"
+        case imageName
+        case title
+        case price
+        case detail
+        case stock
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(imageName, forKey: .imageName)
+        try container.encode(title, forKey: .title)
+        try container.encode(price, forKey: .price)
+        try container.encode(detail, forKey: .detail)
+        // We specifically do not want to encode count that is updated with PN_INCREMENT
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(ItemCompositeKey.self, forKey: .id)
+        self.imageName = try container.decode(String.self, forKey: .imageName)
+        self.title = try container.decode(String.self, forKey: .title)
+        self.price = try container.decode(Double.self, forKey: .price)
+        self.detail = try container.decode(String.self, forKey: .detail)
+        let stock = try container.decodeIfPresent(Double.self, forKey: .stock)
+        self.stock = stock ?? 0.0
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(price)
+        hasher.combine(stock)
+    }
+}
+
+extension ItemModel {
+    static var initialModels: [ItemModel] {
+        [
+            ItemModel(id: "0", imageName: "coke", title: "Coca-Cola", price: 2.50, detail: "A Can of Coca-Cola"),
+            ItemModel(id: "1", imageName: "drpepper", title: "Dr. Pepper", price: 2.50, detail: "A Can of Dr. Pepper"),
+            ItemModel(id: "2", imageName: "lays", title: "Lay's Classic", price: 3.99, detail: "Original Classic Lay's Bag of Chips"),
+            ItemModel(id: "3", imageName: "brownies", title: "Brownies", price: 6.50, detail: "Brownies, Diet Sugar Free Version"),
+            ItemModel(id: "4", imageName: "blt", title: "Classic BLT Egg", price: 2.50, detail: "Contains Egg, Meats and Dairy")
+        ]
+    }
+}
