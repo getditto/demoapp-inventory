@@ -6,6 +6,9 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MenuItem
 import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 
 class DittoSDKInfoActivity : AppCompatActivity() {
 
@@ -24,6 +27,12 @@ class DittoSDKInfoActivity : AppCompatActivity() {
         title = "Ditto SDK Info"
 
         val textView = findViewById<TextView>(R.id.ditto_sdk_info_text_view)
+
+        ViewCompat.setOnApplyWindowInsetsListener(textView) { view, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.updatePadding(top = insets.top)
+            windowInsets
+        }
 
         intent.getStringExtra("sdkInfo")?.let { sdkInfo ->
             val platform = sdkInfo.take(3)
