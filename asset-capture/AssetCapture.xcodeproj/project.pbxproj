@@ -65,14 +65,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		FF01000000000000000001 /* Frameworks */ = {
+		GG01000000000000000001 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		FF01000000000000000002 /* Products */ = {
+		GG01000000000000000002 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				BB0100000000000000000F /* AssetCapture.app */,
@@ -80,7 +80,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		FF01000000000000000003 /* AssetCapture */ = {
+		GG01000000000000000003 /* AssetCapture */ = {
 			isa = PBXGroup;
 			children = (
 				BB01000000000000000001 /* AppDelegate.swift */,
@@ -101,12 +101,12 @@
 			path = AssetCapture;
 			sourceTree = "<group>";
 		};
-		FF01000000000000000004 = {
+		GG01000000000000000004 = {
 			isa = PBXGroup;
 			children = (
-				FF01000000000000000003 /* AssetCapture */,
-				FF01000000000000000002 /* Products */,
-				FF01000000000000000001 /* Frameworks */,
+				GG01000000000000000003 /* AssetCapture */,
+				GG01000000000000000002 /* Products */,
+				GG01000000000000000001 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -168,12 +168,12 @@
 				en,
 				Base,
 			);
-			mainGroup = FF01000000000000000004;
+			mainGroup = GG01000000000000000004;
 			packageReferences = (
 				EE01000000000000000003 /* XCRemoteSwiftPackageReference "DittoSwiftPackage" */,
 				EE01000000000000000004 /* XCRemoteSwiftPackageReference "DittoSwiftTools" */,
 			);
-			productRefGroup = FF01000000000000000002 /* Products */;
+			productRefGroup = GG01000000000000000002 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
