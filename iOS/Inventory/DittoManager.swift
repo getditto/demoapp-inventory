@@ -79,7 +79,9 @@ final class DittoManager {
             // Disable sync with V3 Ditto
             try ditto.disableSyncWithV3()
             Task {
-                // disable strict mode - allows for DQL with counters and objects as CRDT maps, must be called before startSync
+                // Disable DQL strict mode before starting sync. With strict mode off,
+                // objects are treated as CRDT MAPs and counter types are inferred from
+                // APPLY operations (e.g. PN_INCREMENT). This will become the default in SDK 5.0.
                 // https://docs.ditto.live/dql/strict-mode
                 try await ditto.store.execute(
                     query: "ALTER SYSTEM SET DQL_STRICT_MODE = false"
@@ -212,8 +214,8 @@ extension DittoManager {
     }
 
     func incrementCounterFor(id: Int) {
-        // UPDATE Counter using DQL PN_INCREMENT function
-        // TODO insert URL to documentation link
+        // Increment the PN counter using APPLY — requires DQL_STRICT_MODE = false
+        // https://docs.ditto.live/dql/update
         let query =
             "UPDATE inventories APPLY counter PN_INCREMENT BY 1.0 WHERE _id = :id"
         Task {
@@ -228,8 +230,8 @@ extension DittoManager {
     }
 
     func decrementCounterFor(id: Int) {
-        // UPDATE Counter using DQL PN_INCREMENT function
-        // TODO insert URL to documentation link
+        // Decrement the PN counter using APPLY — requires DQL_STRICT_MODE = false
+        // https://docs.ditto.live/dql/update
         let query =
             "UPDATE inventories APPLY counter PN_INCREMENT BY -1.0 WHERE _id = :id"
         Task {
