@@ -52,8 +52,8 @@ final class DittoManager {
     /// - Stopping the Ditto sync process
     ///
     deinit {
-        if ditto.isSyncActive {
-            ditto.stopSync()
+        if ditto.sync.isActive {
+            ditto.sync.stop()
         }
         subscription?.cancel()
         subscription = nil
@@ -87,10 +87,10 @@ final class DittoManager {
                 try await ditto.store.execute(
                     query: "ALTER SYSTEM SET DQL_STRICT_MODE = false"
                 )
-                try ditto.startSync()
+                try ditto.sync.start()
             }
         } catch {
-            let dittoErr = (error as? DittoSwiftError)?.errorDescription
+            let dittoErr = (error as? DittoError)?.errorDescription
             assertionFailure(dittoErr ?? error.localizedDescription)
         }
     }
@@ -200,7 +200,7 @@ extension DittoManager {
                                 ]
                             )
                         } catch {
-                            let dittoErr = (error as? DittoSwiftError)?
+                            let dittoErr = (error as? DittoError)?
                                 .errorDescription
                             assertionFailure(
                                 dittoErr ?? error.localizedDescription
@@ -211,7 +211,7 @@ extension DittoManager {
                     return .commit
                 }
             } catch {
-                let dittoErr = (error as? DittoSwiftError)?
+                let dittoErr = (error as? DittoError)?
                     .errorDescription
                 assertionFailure(dittoErr ?? error.localizedDescription)
             }
@@ -220,7 +220,7 @@ extension DittoManager {
 
     func incrementCounterFor(id: Int) {
         // Increment the COUNTER using APPLY — no collection definition needed on UPDATE
-        // with DQL_STRICT_MODE = false
+        // with DQL_STRICT_MODE = false (https://docs.ditto.live/dql/strict-mode)
         // https://docs.ditto.live/dql/types-and-definitions
         let query =
             "UPDATE inventory APPLY counter INCREMENT BY 1 WHERE _id = :id"
@@ -228,7 +228,7 @@ extension DittoManager {
             do {
                 try await ditto.store.execute(query: query, arguments: ["id": id])
             } catch {
-                let dittoErr = (error as? DittoSwiftError)?
+                let dittoErr = (error as? DittoError)?
                     .errorDescription
                 assertionFailure(dittoErr ?? error.localizedDescription)
             }
@@ -237,7 +237,7 @@ extension DittoManager {
 
     func decrementCounterFor(id: Int) {
         // Decrement the COUNTER using APPLY — no collection definition needed on UPDATE
-        // with DQL_STRICT_MODE = false
+        // with DQL_STRICT_MODE = false (https://docs.ditto.live/dql/strict-mode)
         // https://docs.ditto.live/dql/types-and-definitions
         let query =
             "UPDATE inventory APPLY counter INCREMENT BY -1 WHERE _id = :id"
@@ -245,7 +245,7 @@ extension DittoManager {
             do {
                 try await ditto.store.execute(query: query, arguments: ["id": id])
             } catch {
-                let dittoErr = (error as? DittoSwiftError)?
+                let dittoErr = (error as? DittoError)?
                     .errorDescription
                 assertionFailure(dittoErr ?? error.localizedDescription)
             }

@@ -60,7 +60,7 @@ object DittoManager {
 
     internal suspend fun increment(itemId: Int) {
         // Increment the COUNTER using APPLY — no collection definition needed on UPDATE
-        // with DQL_STRICT_MODE = false
+        // with DQL_STRICT_MODE = false (https://docs.ditto.live/dql/strict-mode)
         // https://docs.ditto.live/dql/types-and-definitions
         val query = "UPDATE inventory APPLY counter INCREMENT BY 1 WHERE _id = :id"
         try {
@@ -73,7 +73,7 @@ object DittoManager {
 
     internal suspend fun decrement(itemId: Int) {
         // Decrement the COUNTER using APPLY — no collection definition needed on UPDATE
-        // with DQL_STRICT_MODE = false
+        // with DQL_STRICT_MODE = false (https://docs.ditto.live/dql/strict-mode)
         // https://docs.ditto.live/dql/types-and-definitions
         val query = "UPDATE inventory APPLY counter INCREMENT BY -1 WHERE _id = :id"
         try {
@@ -85,7 +85,7 @@ object DittoManager {
     }
 
     internal val sdkVersion: String?
-        get() = ditto?.version
+        get() = ditto?.sdkVersion
 
 
     /* Private functions and properties */
