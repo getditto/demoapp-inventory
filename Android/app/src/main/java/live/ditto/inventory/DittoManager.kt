@@ -39,8 +39,9 @@ object DittoManager {
                 it.disableSyncWithV3()
 
                 // Disable DQL strict mode before starting sync. With strict mode off,
-                // objects are treated as CRDT MAPs and counter types are inferred from
-                // APPLY operations (e.g. PN_INCREMENT). This will become the default in SDK 5.0.
+                // objects are treated as CRDT MAPs and non-REGISTER types like COUNTER
+                // don't require collection definitions on UPDATE/SELECT.
+                // This will become the default in SDK 5.0.
                 // https://docs.ditto.live/dql/strict-mode
                 it.store.execute("ALTER SYSTEM SET DQL_STRICT_MODE = false")
 
@@ -58,9 +59,10 @@ object DittoManager {
     }
 
     internal suspend fun increment(itemId: Int) {
-        // Increment the PN counter using APPLY — requires DQL_STRICT_MODE = false
-        // https://docs.ditto.live/dql/update
-        val query = "UPDATE inventories APPLY counter PN_INCREMENT BY 1.0 WHERE _id = :id"
+        // Increment the COUNTER using APPLY — no collection definition needed on UPDATE
+        // with DQL_STRICT_MODE = false
+        // https://docs.ditto.live/dql/types-and-definitions
+        val query = "UPDATE inventory APPLY counter INCREMENT BY 1 WHERE _id = :id"
         try {
             ditto?.store?.execute(query,
                 mapOf("id" to itemId))
@@ -70,9 +72,10 @@ object DittoManager {
     }
 
     internal suspend fun decrement(itemId: Int) {
-        // Decrement the PN counter using APPLY — requires DQL_STRICT_MODE = false
-        // https://docs.ditto.live/dql/update
-        val query = "UPDATE inventories APPLY counter PN_INCREMENT BY -1.0 WHERE _id = :id"
+        // Decrement the COUNTER using APPLY — no collection definition needed on UPDATE
+        // with DQL_STRICT_MODE = false
+        // https://docs.ditto.live/dql/types-and-definitions
+        val query = "UPDATE inventory APPLY counter INCREMENT BY -1 WHERE _id = :id"
         try {
             ditto?.store?.execute(query,
                 mapOf("id" to itemId))
@@ -87,9 +90,11 @@ object DittoManager {
 
     /* Private functions and properties */
     private suspend fun insertDefaultDataIfAbsent() {
-        // CREATE new items using the INSERT INTO xxx INTIAL statement
+        // INSERT with COUNTER type declaration — the collection definition is required on INSERT
+        // so the counter field is created as a COUNTER CRDT, not a plain REGISTER.
         // https://docs.ditto.live/dql/insert#insert-with-initial-documents
-        val query = "INSERT INTO inventories INITIAL DOCUMENTS (:item)"
+        // https://docs.ditto.live/dql/types-and-definitions
+        val query = "INSERT INTO COLLECTION inventory (counter COUNTER) INITIAL DOCUMENTS (:item)"
 
         // Create a transaction to run inserts into with DQL - this is the equivalent to scoped transaction using store.write
         // https://docs.ditto.live/sdk/latest/crud/transactions
@@ -99,7 +104,7 @@ object DittoManager {
                      it.execute(query,
                          mapOf("item" to
                                  mapOf("_id" to viewItem.itemId,
-                                     "counter" to 0.0)
+                                     "counter" to 0)
                          )
                      )
                  }
@@ -112,7 +117,7 @@ object DittoManager {
     }
 
     private fun observeItems() {
-        val query = "SELECT * FROM inventories"
+        val query = "SELECT * FROM inventory"
         ditto?.let {
             // Create Subscription
             // https://docs.ditto.live/sdk/latest/sync/syncing-data#creating-subscriptions
@@ -138,8 +143,8 @@ object DittoManager {
                 } else {
                     diff.updates.forEach { index ->
                         val doc = results.items[index].value
-                        val count = doc["counter"] as Float
-                        itemUpdateListener.updateCount(index, count.toInt())
+                        val count = (doc["counter"] as Number).toInt()
+                        itemUpdateListener.updateCount(index, count)
                     }
                 }
             }

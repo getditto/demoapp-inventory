@@ -80,8 +80,9 @@ final class DittoManager {
             try ditto.disableSyncWithV3()
             Task {
                 // Disable DQL strict mode before starting sync. With strict mode off,
-                // objects are treated as CRDT MAPs and counter types are inferred from
-                // APPLY operations (e.g. PN_INCREMENT). This will become the default in SDK 5.0.
+                // objects are treated as CRDT MAPs and non-REGISTER types like COUNTER
+                // don't require collection definitions on UPDATE/SELECT.
+                // This will become the default in SDK 5.0.
                 // https://docs.ditto.live/dql/strict-mode
                 try await ditto.store.execute(
                     query: "ALTER SYSTEM SET DQL_STRICT_MODE = false"
@@ -103,16 +104,16 @@ final class DittoManager {
 
 extension DittoManager {
 
-    /// Subscribes to all inventory items in the "inventories" collection.
+    /// Subscribes to all inventory items in the "inventory" collection.
     ///
-    /// This method registers a subscription to the "inventories" collection using a DQL query.
+    /// This method registers a subscription to the "inventory" collection using a DQL query.
     /// It also sets up an observer to monitor changes in the database, calculating the differences
     /// between syncs using a DittoDiffer. The observer sends updates to the `itemsUpdated` subject
     /// based on the type of change (initial load or update).
     ///
     /// - Note: This method should be called to start monitoring inventory items for changes.
     func subscribeAllInventoryItems() {
-        let query = "SELECT * FROM inventories"
+        let query = "SELECT * FROM inventory"
         do {
             // Create Subscription
             // https://docs.ditto.live/sdk/latest/sync/syncing-data#creating-subscriptions
@@ -164,18 +165,22 @@ extension DittoManager {
         }
     }
 
-    /// Prepopulates the "inventories" collection with new items if they do not already exist.
+    /// Prepopulates the "inventory" collection with new items if they do not already exist.
     ///
-    /// This method executes a DQL query to insert new documents into the "inventories" collection.
-    /// It uses the "INSERT INTO inventories INTIAL DOCUMENTS" statement to ensure that the documents
-    /// are only inserted if they do not already exist, matching the behavior of `.insertDefaultIfAbsent`.
+    /// This method executes a DQL query to insert new documents into the "inventory" collection.
+    /// It uses INITIAL DOCUMENTS to ensure that the documents are only inserted if they do not
+    /// already exist. The COUNTER type declaration ensures the counter field is created as a
+    /// COUNTER CRDT (not a REGISTER), which supports INCREMENT operations and is compatible
+    /// with the MongoDB connector.
+    /// https://docs.ditto.live/dql/types-and-definitions
     ///
     /// - Parameter itemIds: An array of integers representing the IDs of the items to be inserted.
     func prepopulateItemsIfAbsent(itemIds: [Int]) {
 
-        // CREATE new items using the INSERT INTO xxx INTIAL statement
+        // INSERT with COUNTER type declaration — the collection definition is required on INSERT
+        // so the counter field is created as a COUNTER CRDT, not a plain REGISTER.
         // https://docs.ditto.live/dql/insert#insert-with-initial-documents
-        let query = "INSERT INTO inventories INITIAL DOCUMENTS (:item)"
+        let query = "INSERT INTO COLLECTION inventory (counter COUNTER) INITIAL DOCUMENTS (:item)"
 
         Task {
             // Create a transaction to run inserts into with DQL - this is the equivalent to scoped transaction using store.write
@@ -190,7 +195,7 @@ extension DittoManager {
                                     "item":
                                         [
                                             "_id": itemId,
-                                            "counter": 0.0
+                                            "counter": 0
                                         ]
                                 ]
                             )
@@ -214,10 +219,11 @@ extension DittoManager {
     }
 
     func incrementCounterFor(id: Int) {
-        // Increment the PN counter using APPLY — requires DQL_STRICT_MODE = false
-        // https://docs.ditto.live/dql/update
+        // Increment the COUNTER using APPLY — no collection definition needed on UPDATE
+        // with DQL_STRICT_MODE = false
+        // https://docs.ditto.live/dql/types-and-definitions
         let query =
-            "UPDATE inventories APPLY counter PN_INCREMENT BY 1.0 WHERE _id = :id"
+            "UPDATE inventory APPLY counter INCREMENT BY 1 WHERE _id = :id"
         Task {
             do {
                 try await ditto.store.execute(query: query, arguments: ["id": id])
@@ -230,10 +236,11 @@ extension DittoManager {
     }
 
     func decrementCounterFor(id: Int) {
-        // Decrement the PN counter using APPLY — requires DQL_STRICT_MODE = false
-        // https://docs.ditto.live/dql/update
+        // Decrement the COUNTER using APPLY — no collection definition needed on UPDATE
+        // with DQL_STRICT_MODE = false
+        // https://docs.ditto.live/dql/types-and-definitions
         let query =
-            "UPDATE inventories APPLY counter PN_INCREMENT BY -1.0 WHERE _id = :id"
+            "UPDATE inventory APPLY counter INCREMENT BY -1 WHERE _id = :id"
         Task {
             do {
                 try await ditto.store.execute(query: query, arguments: ["id": id])
