@@ -105,6 +105,22 @@ final class AssetDittoManager {
         }
     }
 
+    // MARK: - Delete
+
+    func deleteAsset(id: String) {
+        Task {
+            do {
+                try await ditto.store.execute(
+                    query: "DELETE FROM assets WHERE _id = :id",
+                    arguments: ["id": id]
+                )
+            } catch {
+                let msg = (error as? DittoSwiftError)?.errorDescription ?? error.localizedDescription
+                print("deleteAsset error: \(msg)")
+            }
+        }
+    }
+
     // MARK: - Info view
 
     var dittoInfoView: DittoInfoViewController {

@@ -108,4 +108,17 @@ extension AssetListViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         AssetListCell.height
     }
+
+    func tableView(_ tableView: UITableView,
+                   trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath)
+    -> UISwipeActionsConfiguration? {
+        let action = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, done in
+            guard let self else { done(false); return }
+            let id = self.dittoManager.assets[indexPath.row].id
+            self.dittoManager.deleteAsset(id: id)
+            done(true)
+        }
+        action.image = UIImage(systemName: "trash")
+        return UISwipeActionsConfiguration(actions: [action])
+    }
 }
