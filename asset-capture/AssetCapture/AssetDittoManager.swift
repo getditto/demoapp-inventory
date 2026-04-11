@@ -34,18 +34,20 @@ final class AssetDittoManager {
         DittoLogger.minimumLogLevel = .debug
         do {
             ditto = Ditto(
-                identity: .onlinePlayground(
-                    appID: Env.DITTO_APP_ID,
-                    token: Env.DITTO_PLAYGROUND_TOKEN,
-                    enableDittoCloudSync: false
-                )
+                identity: .offlinePlayground(appID: "2e9a634e-58fc-4919-b606-33a78369fbb9")
             )
             try ditto.disableSyncWithV3()
+            try ditto.setOfflineOnlyLicenseToken("o2d1c2VyX2lkbkRpdHRvU0VEZW1vT3JnZmV4cGlyeXgYMjAyNi0xMi0wMlQwNDo1OTo1OS45OTlaaXNpZ25hdHVyZXhYTDVMVk5YUUxoWXhHcUovUVBwT3BvZ29iZTE5dXBMcEk0a2hmWkhGRVdDelVtaWVTa0Nia3U5QXlPbWtyMCtleUZWREhJZmI5NDZrR01OcFBqMUlKL0E9PQ==")
             Task {
-                try await ditto.store.execute(
-                    query: "ALTER SYSTEM SET DQL_STRICT_MODE = false"
-                )
-                try ditto.startSync()
+                do {
+                    try await ditto.store.execute(
+                        query: "ALTER SYSTEM SET DQL_STRICT_MODE = false"
+                    )
+                    try ditto.startSync()
+                    print("✅ Ditto startSync succeeded")
+                } catch {
+                    print("❌ Ditto startSync failed: \(error)")
+                }
             }
         } catch {
             let msg = (error as? DittoSwiftError)?.errorDescription ?? error.localizedDescription
