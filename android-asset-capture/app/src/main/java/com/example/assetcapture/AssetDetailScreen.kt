@@ -1,10 +1,13 @@
 package com.example.assetcapture
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -51,6 +54,17 @@ fun AssetDetailScreen(assetId: String, navController: NavController) {
         uri?.let { newImage = uriToBitmap(context, it) }
     }
 
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            val file = File.createTempFile("photo_", ".jpg", context.cacheDir)
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            pendingPhotoUri = uri
+            takePicture.launch(uri)
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -90,10 +104,15 @@ fun AssetDetailScreen(assetId: String, navController: NavController) {
                     // Signal that existing photo should be cleared on save
                 },
                 onCamera = {
-                    val file = File.createTempFile("photo_", ".jpg", context.cacheDir)
-                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
-                    pendingPhotoUri = uri
-                    takePicture.launch(uri)
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                            == PackageManager.PERMISSION_GRANTED) {
+                        val file = File.createTempFile("photo_", ".jpg", context.cacheDir)
+                        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                        pendingPhotoUri = uri
+                        takePicture.launch(uri)
+                    } else {
+                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
                 },
                 onLibrary = {
                     pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
