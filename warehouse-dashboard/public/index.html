@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Warehouse Asset Dashboard</title>
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #1a1d2e;
+      border-bottom: 1px solid #2d3148;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: #f8fafc;
+    }
+
+    header h1 span {
+      color: #6366f1;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #ef4444;
+      margin-right: 8px;
+      transition: background 0.3s;
+    }
+    .status-dot.live { background: #22c55e; animation: pulse 2s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .status-text { font-size: 0.8rem; color: #94a3b8; }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      padding: 16px 24px;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: #1a1d2e;
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      padding: 14px 20px;
+      min-width: 130px;
+      flex: 1;
+    }
+
+    .stat-card .label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .value.total   { color: #a5b4fc; }
+    .value.usable  { color: #4ade80; }
+    .value.repair  { color: #fbbf24; }
+    .value.scrap   { color: #f87171; }
+
+    /* ── Last-update banner ── */
+    #last-update {
+      font-size: 0.75rem;
+      color: #475569;
+      padding: 0 24px 8px;
+    }
+
+    /* ── Table ── */
+    .table-wrap {
+      padding: 0 24px 32px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    thead th {
+      background: #1a1d2e;
+      color: #64748b;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid #2d3148;
+      position: sticky;
+      top: 57px;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #1e2135;
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover { background: #171a2a; }
+
+    tbody tr.flash {
+      animation: rowflash 0.7s ease-out;
+    }
+
+    @keyframes rowflash {
+      0%   { background: #312e81; }
+      100% { background: transparent; }
+    }
+
+    td {
+      padding: 11px 14px;
+      vertical-align: middle;
+    }
+
+    /* ── Photo thumbnail ── */
+    .thumb {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 6px;
+      background: #2d3148;
+      border: 1px solid #3a3f5c;
+    }
+
+    .no-photo {
+      width: 48px;
+      height: 48px;
+      border-radius: 6px;
+      background: #1e2135;
+      border: 1px dashed #3a3f5c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #3a3f5c;
+      font-size: 1.1rem;
+    }
+
+    /* ── NSN ── */
+    .nsn { font-weight: 700; font-family: 'SF Mono', 'Fira Code', monospace; letter-spacing: 0.05em; }
+
+    /* ── Condition badges ── */
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .badge-usable   { background: #14532d; color: #86efac; border: 1px solid #166534; }
+    .badge-repair   { background: #451a03; color: #fcd34d; border: 1px solid #78350f; }
+    .badge-scrap    { background: #450a0a; color: #fca5a5; border: 1px solid #7f1d1d; }
+    .badge-unknown  { background: #1e2135; color: #94a3b8; border: 1px solid #334155; }
+
+    /* ── Notes / device ── */
+    .notes-cell { max-width: 260px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .device-cell { font-size: 0.75rem; color: #475569; font-family: monospace; }
+    .date-cell { font-size: 0.75rem; color: #475569; white-space: nowrap; }
+
+    /* ── Empty state ── */
+    #empty-state {
+      display: none;
+      text-align: center;
+      padding: 64px 24px;
+      color: #475569;
+    }
+    #empty-state svg { width: 56px; height: 56px; margin-bottom: 16px; opacity: 0.4; }
+    #empty-state p { font-size: 0.9rem; }
+
+    /* ── Photo lightbox ── */
+    #lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    #lightbox.open { display: flex; }
+    #lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 10px; }
+    #lightbox-close {
+      position: absolute;
+      top: 20px; right: 28px;
+      font-size: 2rem;
+      color: #e2e8f0;
+      cursor: pointer;
+      line-height: 1;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <h1>🏭 Warehouse <span>Asset Dashboard</span></h1>
+  <div>
+    <span class="status-dot" id="dot"></span>
+    <span class="status-text" id="status-text">Connecting…</span>
+  </div>
+</header>
+
+<!-- Summary stats -->
+<div class="stats-bar">
+  <div class="stat-card"><div class="label">Total Assets</div><div class="value total" id="stat-total">—</div></div>
+  <div class="stat-card"><div class="label">Usable</div><div class="value usable" id="stat-usable">—</div></div>
+  <div class="stat-card"><div class="label">Repairable</div><div class="value repair" id="stat-repair">—</div></div>
+  <div class="stat-card"><div class="label">Scrap</div><div class="value scrap" id="stat-scrap">—</div></div>
+</div>
+
+<div id="last-update"></div>
+
+<!-- Asset table -->
+<div class="table-wrap">
+  <table id="asset-table">
+    <thead>
+      <tr>
+        <th>Photo</th>
+        <th>NSN</th>
+        <th>Condition</th>
+        <th>Notes</th>
+        <th>Device</th>
+        <th>Created</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <div id="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
+      <path d="M16 3H8l-2 4h12l-2-4z"/>
+    </svg>
+    <p>No assets yet. Create one from the iOS or Android app.</p>
+  </div>
+</div>
+
+<!-- Photo lightbox -->
+<div id="lightbox">
+  <span id="lightbox-close" onclick="closeLightbox()">✕</span>
+  <img id="lightbox-img" src="" alt="Asset photo" />
+</div>
+
+<script>
+  // ── State ───────────────────────────────────────────────────────────────────
+  let knownIds = new Set()
+
+  // ── SSE connection ──────────────────────────────────────────────────────────
+  function connect() {
+    const es = new EventSource('/events')
+
+    es.addEventListener('assets', (e) => {
+      const assets = JSON.parse(e.data)
+      render(assets)
+      setLive(true)
+    })
+
+    es.onerror = () => {
+      setLive(false)
+      // Reconnect automatically after a short delay
+      es.close()
+      setTimeout(connect, 3000)
+    }
+  }
+
+  connect()
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+  function render(assets) {
+    // Stats
+    document.getElementById('stat-total').textContent  = assets.length
+    document.getElementById('stat-usable').textContent = assets.filter(a => norm(a.condition) === 'usable').length
+    document.getElementById('stat-repair').textContent = assets.filter(a => norm(a.condition) === 'repairable').length
+    document.getElementById('stat-scrap').textContent  = assets.filter(a => norm(a.condition) === 'scrap').length
+
+    // Last-update timestamp
+    document.getElementById('last-update').textContent =
+      assets.length ? `Last sync: ${new Date().toLocaleTimeString()}` : ''
+
+    // Table
+    const tbody = document.getElementById('tbody')
+    const empty = document.getElementById('empty-state')
+
+    if (assets.length === 0) {
+      tbody.innerHTML = ''
+      empty.style.display = 'block'
+      return
+    }
+    empty.style.display = 'none'
+
+    // Build new rows
+    tbody.innerHTML = assets.map(a => rowHTML(a)).join('')
+
+    // Flash rows that just appeared
+    assets.forEach(a => {
+      if (!knownIds.has(a._id)) {
+        const row = document.querySelector(`tr[data-id="${CSS.escape(a._id)}"]`)
+        if (row) row.classList.add('flash')
+      }
+    })
+
+    knownIds = new Set(assets.map(a => a._id))
+  }
+
+  function rowHTML(a) {
+    const photoCell = a.photoJpegBase64
+      ? `<img class="thumb" src="data:image/jpeg;base64,${a.photoJpegBase64}"
+             alt="photo" onclick="openLightbox('${a._id}')"
+             style="cursor:pointer" title="Click to enlarge" />`
+      : `<div class="no-photo" title="No photo">📷</div>`
+
+    return `<tr data-id="${escHtml(a._id)}" data-photo="${a.photoJpegBase64 ? escHtml(a.photoJpegBase64) : ''}">
+      <td>${photoCell}</td>
+      <td><span class="nsn">${escHtml(a.nsn || '—')}</span></td>
+      <td>${badgeHTML(a.condition)}</td>
+      <td class="notes-cell">${escHtml(a.notes || '—')}</td>
+      <td class="device-cell">${escHtml(shortDevice(a.deviceId))}</td>
+      <td class="date-cell">${formatDate(a.createdAt)}</td>
+    </tr>`
+  }
+
+  function badgeHTML(condition) {
+    const n = norm(condition)
+    const cls = n === 'usable' ? 'badge-usable'
+              : n === 'repairable' ? 'badge-repair'
+              : n === 'scrap' ? 'badge-scrap'
+              : 'badge-unknown'
+    return `<span class="badge ${cls}">${escHtml(condition || 'Unknown')}</span>`
+  }
+
+  // ── Lightbox ────────────────────────────────────────────────────────────────
+  function openLightbox(id) {
+    const row = document.querySelector(`tr[data-id="${CSS.escape(id)}"]`)
+    if (!row) return
+    const b64 = row.getAttribute('data-photo')
+    if (!b64) return
+    document.getElementById('lightbox-img').src = `data:image/jpeg;base64,${b64}`
+    document.getElementById('lightbox').classList.add('open')
+  }
+
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open')
+  }
+
+  document.getElementById('lightbox').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeLightbox()
+  })
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+  function norm(s) { return (s || '').toLowerCase() }
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+  }
+
+  function shortDevice(id) {
+    if (!id) return '—'
+    // Show last 8 chars of UUID to keep it compact
+    return '…' + id.slice(-8)
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '—'
+    try {
+      const d = new Date(iso)
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+        + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+    } catch { return iso }
+  }
+
+  function setLive(live) {
+    document.getElementById('dot').className = 'status-dot' + (live ? ' live' : '')
+    document.getElementById('status-text').textContent = live ? 'Live' : 'Reconnecting…'
+  }
+</script>
+</body>
+</html>

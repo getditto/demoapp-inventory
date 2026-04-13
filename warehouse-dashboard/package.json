@@ -1,0 +1,13 @@
+{
+  "name": "warehouse-dashboard",
+  "version": "1.0.0",
+  "description": "Real-time warehouse asset dashboard powered by Ditto",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@dittolive/ditto": "4.13.1",
+    "express": "^4.18.2"
+  }
+}
