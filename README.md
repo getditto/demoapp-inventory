@@ -4,7 +4,7 @@ Demo app for showcasing Ditto's real-time sync and Conflict Resolution through t
 
 This inventory demo showcases the smoothness of Ditto's sync and conflict resolution, and how counters work with Ditto. You can also open up the Presence Viewer to see all existing devices and connections in the mesh.
 
-Powered by [Ditto](https://www.ditto.live/).
+Powered by [Ditto](https://www.ditto.com/).
 
 For support, please contact Ditto Support (<support@ditto.com>).
 
