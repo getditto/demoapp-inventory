@@ -142,7 +142,7 @@ extension MainViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: ItemTableViewCell.REUSE_ID, for: indexPath) as! ItemTableViewCell
         let item = viewItems[indexPath.row]
-        item.count = Int(dittoManager.models.items[indexPath.row].counter)
+        item.count = dittoManager.models.items[indexPath.row].counter
         cell.setup(item: item)
         cell.delegate = self
         return cell

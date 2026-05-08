@@ -16,7 +16,7 @@ final class DittoSDKInfoViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let sdkVersion = ditto.sdkVersion
+        let sdkVersion = Ditto.version
         let platform = sdkVersion.prefix(4)
         let versions = sdkVersion.dropFirst(4).split(separator: "_")
         let semVer = String(versions[0])

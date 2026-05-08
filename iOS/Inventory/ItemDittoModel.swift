@@ -20,12 +20,12 @@ struct ItemDittoModel {
     
     // MARK: - Collection Name
     
-    static let collectionName = "inventories"
-    
+    static let collectionName = "inventory"
+
     // MARK: - Properties
-    
+
     let _id: Int
-    let counter: Double
+    let counter: Int
     
 }
 
@@ -33,10 +33,10 @@ extension ItemDittoModel {
     /// Convenience initializer returns instance from `QueryResultItem.value`
     init(_ value: [String: Any?]) {
         self._id = value["_id"] as! Int
-        if (value["counter"] != nil){
-            self.counter = value["counter"] as! Double
+        if let counter = value["counter"] as? Int {
+            self.counter = counter
         } else {
-            self.counter = 0.0
+            self.counter = 0
         }
     }
 }
@@ -53,7 +53,7 @@ extension ItemDittoModel: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         _id = try container.decode(Int.self, forKey: ._id)
-        counter = try container.decodeIfPresent(Double.self, forKey: .counter) ?? 0.0
+        counter = try container.decodeIfPresent(Int.self, forKey: .counter) ?? 0
     }
     
     private enum CodingKeys: String, CodingKey {
