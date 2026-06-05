@@ -72,7 +72,8 @@ final class DittoManager {
                     .onlinePlayground(
                         appID: Env.DITTO_APP_ID,
                         token: Env.DITTO_PLAYGROUND_TOKEN,
-                        enableDittoCloudSync: false
+                        enableDittoCloudSync: false,
+                        customAuthURL: URL(string: Env.DITTO_AUTH_URL)
                     )
             )
 
