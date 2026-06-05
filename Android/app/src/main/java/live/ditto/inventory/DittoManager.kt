@@ -31,7 +31,16 @@ object DittoManager {
         DittoLogger.minimumLogLevel = DittoLogLevel.DEBUG
 
         val dependencies = DefaultAndroidDittoDependencies(context)
-        ditto = Ditto(dependencies, DittoIdentity.OnlinePlayground(dependencies, APP_ID, ONLINE_AUTH_TOKEN, false))
+        ditto = Ditto(
+            dependencies,
+            DittoIdentity.OnlinePlayground(
+                dependencies,
+                APP_ID,
+                ONLINE_AUTH_TOKEN,
+                false,
+                customAuthUrl = BuildConfig.DITTO_AUTH_URL
+            )
+        )
 
         try {
             ditto?.let {
