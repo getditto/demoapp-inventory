@@ -66,30 +66,31 @@ final class DittoManager {
 
         do {
             // Initialize Ditto
-            // https://docs.ditto.live/sdk/latest/install-guides/swift#integrating-and-initializing-sync
-            ditto = Ditto(
-                identity:
-                    .onlinePlayground(
-                        appID: Env.DITTO_APP_ID,
-                        token: Env.DITTO_PLAYGROUND_TOKEN,
-                        enableDittoCloudSync: false,
-                        customAuthURL: URL(string: Env.DITTO_AUTH_URL)
-                    )
+            // https://docs.ditto.live/sdk/latest/install-guides/swift
+            let config = DittoConfig(
+                databaseID: Env.DITTO_DATABASE_ID,
+                connect: .server(url: URL(string: Env.DITTO_URL)!)
             )
+            ditto = try Ditto.openSync(config: config)
 
-            // Disable sync with V3 Ditto
-            try ditto.disableSyncWithV3()
-            Task {
-                // Disable DQL strict mode before starting sync. With strict mode off,
-                // objects are treated as CRDT MAPs and non-REGISTER types like COUNTER
-                // don't require collection definitions on UPDATE/SELECT.
-                // This will become the default in SDK 5.0.
-                // https://docs.ditto.live/dql/strict-mode
-                try await ditto.store.execute(
-                    query: "ALTER SYSTEM SET DQL_STRICT_MODE = false"
-                )
-                try ditto.sync.start()
+            // The expiration handler logs in with the development token on initial
+            // auth and ahead of token expiry.
+            // https://docs.ditto.live/sdk/latest/auth-and-authorization
+            ditto.auth?.expirationHandler = { expiredDitto, _ in
+                expiredDitto.auth?.login(
+                    token: Env.DITTO_DEVELOPMENT_TOKEN,
+                    provider: .development
+                ) { _, error in
+                    if let error {
+                        print("Ditto auth failed: \(error)")
+                    }
+                }
             }
+
+            // DQL strict mode is off, so objects are treated as CRDT MAPs and
+            // non-REGISTER types like COUNTER don't require collection definitions
+            // on UPDATE/SELECT. https://docs.ditto.live/dql/strict-mode
+            try ditto.sync.start()
         } catch {
             let dittoErr = (error as? DittoError)?.errorDescription
             assertionFailure(dittoErr ?? error.localizedDescription)
@@ -132,11 +133,16 @@ extension DittoManager {
                 [weak self] results in
                 
                 do {
-                    let decoder = JSONDecoder()
-                    let allItems = try results.items.compactMap{ try decoder.decode(ItemDittoModel.self, from: $0.jsonData()) }
-                    self?.models.items = allItems
                     let diff = dittoDiffer.diff(results.items)
-                    
+                    let decoder = JSONDecoder()
+                    let allItems = try results.items.compactMap { item -> ItemDittoModel? in
+                        let model = try decoder.decode(ItemDittoModel.self, from: item.jsonData())
+                        // Free native memory backing the result item — do not use it after this.
+                        item.dematerialize()
+                        return model
+                    }
+                    self?.models.items = allItems
+
                     // NOTE:  if you are curious on why we don't handle deletions - the app code
                     // currently does not allow deleting of inventory items, so there is no reason to handle
                     // checking the count of deletions.
@@ -184,7 +190,7 @@ extension DittoManager {
         let query = "INSERT INTO COLLECTION inventory (counter COUNTER) INITIAL DOCUMENTS (:item)"
 
         Task {
-            // Create a transaction to run inserts into with DQL - this is the equivalent to scoped transaction using store.write
+            // Run the inserts inside a single DQL transaction.
             // https://docs.ditto.live/sdk/latest/crud/transactions
             do {
                 try await ditto.store.transaction { transaction in
