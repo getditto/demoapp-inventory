@@ -4,7 +4,6 @@ import android.util.Log
 import com.ditto.kotlin.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 
 object DittoManager {
     /* Interfaces */
@@ -147,7 +146,7 @@ object DittoManager {
                     }
                 } else {
                     diff.updates.forEach { index ->
-                        val count = JSONObject(result.items[index].jsonString()).getInt("counter")
+                        val count = result.items[index].value["counter"].intOrNull ?: 0
                         withContext(Dispatchers.Main) {
                             itemUpdateListener.updateCount(index, count)
                         }
