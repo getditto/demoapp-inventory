@@ -59,7 +59,7 @@ android {
 }
 
 dependencies {
-    implementation("com.ditto:ditto-kotlin:5.0.1")
+    implementation("com.ditto:ditto-kotlin:5.0.2")
 
     // Ditto Tools
     implementation "live.ditto:ditto-tools-android:6.0.1-rc.1"
