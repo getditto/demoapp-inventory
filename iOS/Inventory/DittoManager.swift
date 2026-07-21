@@ -67,9 +67,13 @@ final class DittoManager {
         do {
             // Initialize Ditto
             // https://docs.ditto.live/sdk/latest/install-guides/swift
+            guard let serverURL = URL(string: Env.DITTO_SERVER_URL) else {
+                print("Ditto init skipped: DITTO_SERVER_URL is missing or invalid (\"\(Env.DITTO_SERVER_URL)\"). Set it in .env before building.")
+                return
+            }
             let config = DittoConfig(
                 databaseID: Env.DITTO_DATABASE_ID,
-                connect: .server(url: URL(string: Env.DITTO_SERVER_URL)!)
+                connect: .server(url: serverURL)
             )
             ditto = try Ditto.openSync(config: config)
 
