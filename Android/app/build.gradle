@@ -58,6 +58,15 @@ android {
     namespace 'live.ditto.inventory'
 }
 
+// Credentials are baked into BuildConfig fields from ../.env at configuration time.
+// Declare that file as an input so BuildConfig regenerates when .env changes —
+// otherwise the task stays up-to-date and ships stale values until a clean build.
+tasks.configureEach { task ->
+    if (task.name ==~ /generate.*BuildConfig/) {
+        task.inputs.file(rootProject.file("../.env")).optional().withPropertyName('dotEnv')
+    }
+}
+
 dependencies {
     implementation("com.ditto:ditto-kotlin:5.0.2")
 
