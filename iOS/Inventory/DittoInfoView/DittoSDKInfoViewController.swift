@@ -16,18 +16,7 @@ final class DittoSDKInfoViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Ditto.version is the SDK semantic version (e.g. "5.0.2"); it no longer
-        // embeds a platform prefix or commit hash.
-        let sdkVersion = Ditto.version
-        let parts = sdkVersion.split(separator: "_")
-        let semVer = parts.first.map(String.init) ?? sdkVersion
-        let commitHash = parts.count > 1 ? String(parts[1]) : "n/a"
-
-        textView.text = """
-        Platform: iOS
-        SDK Version: \(semVer)
-        Commit Hash: \(commitHash)
-        """
+        textView.text = "Ditto SDK Version: \(Ditto.version)"
 
     }
 }
