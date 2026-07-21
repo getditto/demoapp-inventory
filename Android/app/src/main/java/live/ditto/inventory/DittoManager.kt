@@ -35,7 +35,7 @@ object DittoManager {
         val ditto = DittoFactory.create(
             DittoConfig(
                 databaseId = DATABASE_ID,
-                connect = DittoConfig.Connect.Server(BuildConfig.DITTO_URL)
+                connect = DittoConfig.Connect.Server(BuildConfig.DITTO_SERVER_URL)
             )
         )
         this.ditto = ditto

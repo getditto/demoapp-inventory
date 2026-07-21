@@ -23,7 +23,7 @@ android {
             prop.load(new FileInputStream(credsFile))
             buildConfigField('String', 'DITTO_DATABASE_ID', "\"${prop['DITTO_DATABASE_ID']}\"")
             buildConfigField('String', 'DITTO_DEVELOPMENT_TOKEN', "\"${prop['DITTO_DEVELOPMENT_TOKEN']}\"")
-            buildConfigField('String', 'DITTO_URL', "\"${prop['DITTO_URL']}\"")
+            buildConfigField('String', 'DITTO_SERVER_URL', "\"${prop['DITTO_SERVER_URL']}\"")
         }
         release {
             minifyEnabled false
@@ -34,7 +34,7 @@ android {
                 prop.load(new FileInputStream(credsFile))
                 buildConfigField('String', 'DITTO_DATABASE_ID', "\"${prop['DITTO_DATABASE_ID']}\"")
                 buildConfigField('String', 'DITTO_DEVELOPMENT_TOKEN', "\"${prop['DITTO_DEVELOPMENT_TOKEN']}\"")
-                buildConfigField('String', 'DITTO_URL', "\"${prop['DITTO_URL']}\"")
+                buildConfigField('String', 'DITTO_SERVER_URL', "\"${prop['DITTO_SERVER_URL']}\"")
             } catch (FileNotFoundException e) {
                 logger.warn("Warning: " + e.getMessage())
             }
