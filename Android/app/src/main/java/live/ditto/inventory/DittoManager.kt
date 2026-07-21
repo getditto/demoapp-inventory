@@ -32,21 +32,15 @@ object DittoManager {
 
         // Initialize Ditto
         // https://docs.ditto.live/sdk/latest/install-guides/kotlin
-        if (BuildConfig.DITTO_SERVER_URL.isBlank()) {
-            Log.e("DittoManager", "DITTO_SERVER_URL is missing. Set it in .env before building.")
-            return
+        require(BuildConfig.DITTO_SERVER_URL.isNotBlank()) {
+            "DITTO_SERVER_URL is missing or invalid: \"${BuildConfig.DITTO_SERVER_URL}\". Set it in .env before building."
         }
-        val ditto = try {
-            DittoFactory.create(
-                DittoConfig(
-                    databaseId = DATABASE_ID,
-                    connect = DittoConfig.Connect.Server(BuildConfig.DITTO_SERVER_URL)
-                )
+        val ditto = DittoFactory.create(
+            DittoConfig(
+                databaseId = DATABASE_ID,
+                connect = DittoConfig.Connect.Server(BuildConfig.DITTO_SERVER_URL)
             )
-        } catch (e: Throwable) {
-            Log.e("DittoManager", "Failed to initialize Ditto (server URL \"${BuildConfig.DITTO_SERVER_URL}\"): ${e.message}")
-            return
-        }
+        )
         this.ditto = ditto
 
         try {
