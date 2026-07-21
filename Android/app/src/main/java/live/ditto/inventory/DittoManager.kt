@@ -30,8 +30,11 @@ object DittoManager {
     internal suspend fun startDitto() {
         DittoLogger.minimumLogLevel = DittoLogLevel.Debug
 
-        // Initialize Ditto
+        // Initialize Ditto — fail fast with a clear message if any credential is
+        // missing, since these are build-time .env values.
         // https://docs.ditto.live/sdk/latest/install-guides/kotlin
+        require(DATABASE_ID.isNotBlank()) { "DITTO_DATABASE_ID is missing. Set it in .env before building." }
+        require(DEVELOPMENT_TOKEN.isNotBlank()) { "DITTO_DEVELOPMENT_TOKEN is missing. Set it in .env before building." }
         require(BuildConfig.DITTO_SERVER_URL.isNotBlank()) {
             "DITTO_SERVER_URL is missing or invalid: \"${BuildConfig.DITTO_SERVER_URL}\". Set it in .env before building."
         }
