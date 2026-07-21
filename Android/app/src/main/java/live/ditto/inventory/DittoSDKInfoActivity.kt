@@ -35,12 +35,13 @@ class DittoSDKInfoActivity : AppCompatActivity() {
         }
 
         intent.getStringExtra("sdkInfo")?.let { sdkInfo ->
-            val platform = sdkInfo.take(3)
-            val versions = sdkInfo.drop(3).split("_")
-            val semVer = versions[0]
-            val commitHash = versions[1]
+            // Ditto.VERSION is the SDK semantic version (e.g. "5.0.2"); it no longer
+            // embeds a platform prefix or commit hash.
+            val parts = sdkInfo.split("_")
+            val semVer = parts.getOrElse(0) { sdkInfo }
+            val commitHash = parts.getOrElse(1) { "n/a" }
 
-            textView.text = getString(R.string.sdk_info, platform, semVer, commitHash).trimIndent()
+            textView.text = getString(R.string.sdk_info, "Android", semVer, commitHash).trimIndent()
         }
     }
 
