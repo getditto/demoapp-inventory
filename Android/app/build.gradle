@@ -25,12 +25,12 @@ def dittoEnv(String key) {
 
 android {
 
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "live.ditto.inventory"
         minSdkVersion 26
-        targetSdkVersion 35
+        targetSdkVersion 36
         versionCode 60
         versionName "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
