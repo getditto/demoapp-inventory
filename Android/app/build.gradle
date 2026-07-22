@@ -30,7 +30,7 @@ android {
     defaultConfig {
         applicationId "live.ditto.inventory"
         minSdkVersion 26
-        targetSdkVersion 36
+        targetSdk 36
         versionCode 60
         versionName "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
