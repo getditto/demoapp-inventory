@@ -68,7 +68,7 @@ tasks.configureEach { task ->
 }
 
 dependencies {
-    implementation("com.ditto:ditto-kotlin:5.0.2")
+    implementation("com.ditto:ditto-kotlin:5.0.3")
 
     // Ditto Tools
     implementation "live.ditto:ditto-tools-android:6.0.1-rc.1"
