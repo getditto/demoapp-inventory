@@ -1,0 +1,42 @@
+{
+  "originHash" : "e46e5400f3661256bd0197e1612c81282831b17087168009e217d707f188d805",
+  "pins" : [
+    {
+      "identity" : "cartography",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/robb/Cartography",
+      "state" : {
+        "revision" : "b75197ea134f42b5feafb04b526b37eb1a41034b",
+        "version" : "4.0.0"
+      }
+    },
+    {
+      "identity" : "dittoswiftpackage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/getditto/DittoSwiftPackage",
+      "state" : {
+        "revision" : "7d7831fa46540f59522e7d7273bf7bd4b9a699b1",
+        "version" : "5.0.3"
+      }
+    },
+    {
+      "identity" : "dittoswifttools",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/getditto/DittoSwiftTools",
+      "state" : {
+        "revision" : "ac5191ba58e1e7296f735f4cc302fab48260ce84",
+        "version" : "10.0.0-rc.9"
+      }
+    },
+    {
+      "identity" : "swift-collections",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-collections",
+      "state" : {
+        "revision" : "a0cb0954ecb21e4e31b0070e6ed5674e8556685a",
+        "version" : "1.6.0"
+      }
+    }
+  ],
+  "version" : 3
+}
