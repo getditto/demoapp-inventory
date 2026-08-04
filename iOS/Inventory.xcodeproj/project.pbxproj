@@ -464,8 +464,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/getditto/DittoSwiftTools";
 			requirement = {
-				kind = exactVersion;
-				version = "10.0.0-rc.15";
+				kind = upToNextMajorVersion;
+				minimumVersion = 10.0.0;
 			};
 		};
 		CCE8646329E59037007D822C /* XCRemoteSwiftPackageReference "Cartography" */ = {
