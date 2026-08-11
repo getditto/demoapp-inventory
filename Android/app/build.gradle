@@ -2,6 +2,27 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
+// Reads a value from the shared repo-root .env (the single source of truth for
+// Ditto credentials across both apps; values are unquoted). Fails the build with
+// a clear message when the file or key is missing or blank.
+def dittoEnv(String key) {
+    def envFile = rootProject.file("../.env")
+    if (!envFile.isFile()) {
+        throw new GradleException(
+            "Shared .env not found at ${envFile.absolutePath}. Copy .env.template to .env at the repo root before building."
+        )
+    }
+    def props = new Properties()
+    envFile.withInputStream { props.load(it) }
+    def value = props.getProperty(key)?.trim()
+    if (!value) {
+        throw new GradleException(
+            "Missing or blank \"$key\" in ${envFile.absolutePath}. Fill in every value from .env.template before building."
+        )
+    }
+    return value
+}
+
 android {
 
     compileSdk 35
@@ -16,31 +37,9 @@ android {
     }
 
     buildTypes {
-
-        debug {
-            def credsFile = rootProject.file("../.env")
-            def prop = new Properties()
-            prop.load(new FileInputStream(credsFile))
-            buildConfigField('String', 'DITTO_APP_ID', "\"${prop['DITTO_APP_ID']}\"")
-            buildConfigField('String', 'DITTO_PLAYGROUND_TOKEN', "\"${prop['DITTO_PLAYGROUND_TOKEN']}\"")
-            buildConfigField('String', 'DITTO_AUTH_URL', "\"${prop['DITTO_AUTH_URL']}\"")
-            buildConfigField('String', 'DITTO_WEBSOCKET_URL', "\"${prop['DITTO_WEBSOCKET_URL']}\"")
-        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            def credsFile = rootProject.file("../.env")
-            def prop = new Properties()
-            try {
-                prop.load(new FileInputStream(credsFile))
-                buildConfigField('String', 'DITTO_APP_ID', "\"${prop['DITTO_APP_ID']}\"")
-                buildConfigField('String', 'DITTO_PLAYGROUND_TOKEN', "\"${prop['DITTO_PLAYGROUND_TOKEN']}\"")
-                buildConfigField('String', 'DITTO_AUTH_URL', "\"${prop['DITTO_AUTH_URL']}\"")
-                buildConfigField('String', 'DITTO_WEBSOCKET_URL', "\"${prop['DITTO_WEBSOCKET_URL']}\"")
-            } catch (FileNotFoundException e) {
-                logger.warn("Warning: " + e.getMessage())
-            }
-
         }
     }
 
@@ -54,19 +53,45 @@ android {
     }
 
     buildFeatures {
+        buildConfig true
         viewBinding true
         compose true
     }
     namespace 'live.ditto.inventory'
 }
 
+// Bake the Ditto credentials into BuildConfig from the shared repo-root .env
+// (see dittoEnv), wired through androidComponents with a lazy provider so the
+// file is read only when BuildConfig is actually generated — a fresh clone can
+// still run non-build tasks (./gradlew tasks, IDE sync) with no .env present.
+// The provider also makes the value a task input, so editing .env regenerates
+// BuildConfig without a clean build. Values in .env are unquoted, so wrap each
+// in quotes for the generated Java string literal.
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        ['DITTO_DATABASE_ID', 'DITTO_DEVELOPMENT_TOKEN', 'DITTO_SERVER_URL'].each { key ->
+            variant.buildConfigFields.put(
+                key,
+                providers.provider {
+                    new com.android.build.api.variant.BuildConfigField(
+                        'String', "\"${dittoEnv(key)}\"".toString(), null
+                    )
+                }
+            )
+        }
+    }
+}
+
 dependencies {
-    implementation("live.ditto:ditto:4.14.4")
+    implementation("com.ditto:ditto-kotlin:5.0.3")
 
     // Ditto Tools
-    implementation "live.ditto:ditto-tools-android:5.0.2"
+    implementation "com.ditto:ditto-tools-android:6.0.0"
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    // Dispatchers.Main (used in the store observer) is provided by coroutines-android;
+    // declare it directly rather than relying on a transitive path via fragment-ktx.
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1"
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'androidx.fragment:fragment-ktx:1.8.5'
     implementation 'androidx.core:core-ktx:1.15.0'

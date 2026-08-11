@@ -17,19 +17,30 @@ if [ $# -ne 2 ]; then
   exit 1
 fi
 
+if [ ! -f "$1" ]; then
+  echo "Ditto .env not found at \"$1\". Copy .env.template to .env at the repo root and fill it in." 1>&2
+  exit 1
+fi
+
 if [ -f "$1" ]; then
     while IFS='' read -r line || [[ -n "$line" ]]; do
         line="${line//[$'\r\n']}"
         trimline="${line//[$'\t\r\n ']}"
-        if [ -n "$trimline" ]; then
-            KEY="${line%%=*}"
-            VALUE="${line#*=}"
-            code=$(cat <<EOS
+        # Skip blank lines and # comments, and trim whitespace around the key and
+        # value. This matches java.util.Properties (the Android parser) so the
+        # shared .env means the same thing on both platforms — a stray space
+        # around '=' can't become a space-prefixed credential, and a # comment
+        # can't break the generated Env.swift.
+        case "$trimline" in
+            ''|'#'*) continue ;;
+        esac
+        KEY=$(printf '%s' "${line%%=*}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        VALUE=$(printf '%s' "${line#*=}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        code=$(cat <<EOS
         $code
     static let $KEY = "$VALUE"
 EOS
 )
-        fi
     done < "$1"
 fi
 

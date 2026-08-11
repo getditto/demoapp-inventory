@@ -16,17 +16,7 @@ final class DittoSDKInfoViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let sdkVersion = Ditto.version
-        let platform = sdkVersion.prefix(4)
-        let versions = sdkVersion.dropFirst(4).split(separator: "_")
-        let semVer = String(versions[0])
-        let commitHash = String(versions[1])
-
-        textView.text = """
-        Platform: \(platform)
-        SDK Version: \(semVer)
-        Commit Hash: \(commitHash)
-        """
+        textView.text = "Ditto SDK Version: \(Ditto.version)"
 
     }
 }

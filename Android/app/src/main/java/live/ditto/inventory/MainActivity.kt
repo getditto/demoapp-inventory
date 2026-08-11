@@ -23,7 +23,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.launch
-import live.ditto.transports.DittoSyncPermissions
+import com.ditto.kotlin.transports.DittoSyncPermissions
 import java.util.Locale
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
         DittoManager.itemUpdateListener = this
 
         lifecycleScope.launch {
-            DittoManager.startDitto(applicationContext)
+            DittoManager.startDitto()
         }
 
         setupLayout()
@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
     }
 
     private fun showInformationView() {
-        val intent = DittoManager.sdkVersion?.let { DittoInfoListActivity.createIntent(this, it) }
+        val intent = DittoInfoListActivity.createIntent(this, DittoManager.sdkVersion)
         startActivity(intent)
     }
 

@@ -3,5 +3,5 @@
     <string name="show_info_view">Information</string>
     <string name="show_connections_view">Connections</string>
     <string name="show_presence_view">Ditto Tools</string>
-    <string name="sdk_info">"\n                Platform: %1$s\n                Version: %2$s\n                Commit Hash: %3$s\n            "</string>
+    <string name="sdk_info">Ditto SDK Version: %1$s</string>
 </resources>
