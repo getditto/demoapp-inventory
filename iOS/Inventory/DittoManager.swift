@@ -70,8 +70,10 @@ final class DittoManager {
             // https://docs.ditto.live/sdk/latest/install-guides/swift
             precondition(!Env.DITTO_DATABASE_ID.isEmpty, "DITTO_DATABASE_ID is missing. Set it in .env before building.")
             precondition(!Env.DITTO_DEVELOPMENT_TOKEN.isEmpty, "DITTO_DEVELOPMENT_TOKEN is missing. Set it in .env before building.")
-            guard let serverURL = URL(string: Env.DITTO_SERVER_URL) else {
-                fatalError("DITTO_SERVER_URL is missing or invalid: \"\(Env.DITTO_SERVER_URL)\". Set it in .env before building.")
+            // Require a scheme — URL(string:) accepts scheme-less input like
+            // "my-app.cloud.ditto.live", which then fails opaquely inside the SDK.
+            guard let serverURL = URL(string: Env.DITTO_SERVER_URL), serverURL.scheme != nil else {
+                fatalError("DITTO_SERVER_URL is invalid: \"\(Env.DITTO_SERVER_URL)\" — include the scheme, e.g. https://<your-app>.cloud.ditto.live.")
             }
             let config = DittoConfig(
                 databaseID: Env.DITTO_DATABASE_ID,
@@ -122,22 +124,27 @@ extension DittoManager {
     /// - Note: This method should be called to start monitoring inventory items for changes.
     func subscribeAllInventoryItems() {
         let query = "SELECT * FROM inventory"
+
+        // Register the subscription in its own do/catch: it drives sync, but a
+        // failure here must not skip the observer below, which is a purely local
+        // read of whatever is already in the store.
+        // https://docs.ditto.live/sdk/latest/sync/syncing-data#creating-subscriptions
         do {
-            // Create Subscription
-            // https://docs.ditto.live/sdk/latest/sync/syncing-data#creating-subscriptions
-            self.subscription = try ditto.sync.registerSubscription(
-                query: query
-            )
+            self.subscription = try ditto.sync.registerSubscription(query: query)
+        } catch {
+            print("Failed to register subscription: \(error)")
+        }
 
-            // DittoDiffer - used to calculate the delta changes between syncs
-            // https://docs.ditto.live/sdk/latest/crud/read#diffing-results
-            let dittoDiffer = DittoDiffer()
+        // DittoDiffer - used to calculate the delta changes between syncs
+        // https://docs.ditto.live/sdk/latest/crud/read#diffing-results
+        let dittoDiffer = DittoDiffer()
 
-            // Register Observer to see changes in the database from sync
-            // https://docs.ditto.live/sdk/latest/crud/observing-data-changes
+        // Register Observer to see changes in the database from sync
+        // https://docs.ditto.live/sdk/latest/crud/observing-data-changes
+        do {
             storeObserver = try ditto.store.registerObserver(query: query) {
                 [weak self] results in
-                
+
                 do {
                     let diff = dittoDiffer.diff(results.items)
                     let decoder = JSONDecoder()

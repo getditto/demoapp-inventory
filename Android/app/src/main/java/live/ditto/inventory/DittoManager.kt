@@ -2,6 +2,7 @@ package live.ditto.inventory
 
 import android.util.Log
 import com.ditto.kotlin.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -19,6 +20,7 @@ object DittoManager {
     var ditto: Ditto? = null; private set
 
     /* Private properties */
+    private const val TAG = "DittoManager"
     private var subscription: DittoSyncSubscription? = null
     private var observer: DittoStoreObserver? = null
 
@@ -30,13 +32,17 @@ object DittoManager {
     internal suspend fun startDitto() {
         DittoLogger.minimumLogLevel = DittoLogLevel.Debug
 
-        // Initialize Ditto — fail fast with a clear message if any credential is
-        // missing, since these are build-time .env values.
+        // Defensive backstop only: build-time credential validation lives in
+        // app/build.gradle (dittoEnv), which fails the build with a clear message
+        // when a credential is missing. These guards catch a present-but-empty
+        // value, and verify the server URL carries a scheme — Connect.Server
+        // accepts a scheme-less string that then fails opaquely inside the SDK.
         // https://docs.ditto.live/sdk/latest/install-guides/kotlin
-        require(DATABASE_ID.isNotBlank()) { "DITTO_DATABASE_ID is missing. Set it in .env before building." }
-        require(DEVELOPMENT_TOKEN.isNotBlank()) { "DITTO_DEVELOPMENT_TOKEN is missing. Set it in .env before building." }
-        require(BuildConfig.DITTO_SERVER_URL.isNotBlank()) {
-            "DITTO_SERVER_URL is missing or invalid: \"${BuildConfig.DITTO_SERVER_URL}\". Set it in .env before building."
+        require(DATABASE_ID.isNotBlank()) { "DITTO_DATABASE_ID is missing — set it in the repo-root .env before building." }
+        require(DEVELOPMENT_TOKEN.isNotBlank()) { "DITTO_DEVELOPMENT_TOKEN is missing — set it in the repo-root .env before building." }
+        require(BuildConfig.DITTO_SERVER_URL.isNotBlank()) { "DITTO_SERVER_URL is missing — set it in the repo-root .env before building." }
+        require("://" in BuildConfig.DITTO_SERVER_URL) {
+            "DITTO_SERVER_URL is invalid: \"${BuildConfig.DITTO_SERVER_URL}\" — include the scheme, e.g. https://<your-app>.cloud.ditto.live."
         }
         val ditto = DittoFactory.create(
             DittoConfig(
@@ -47,23 +53,32 @@ object DittoManager {
         this.ditto = ditto
 
         try {
-            // The expiration handler is a suspend lambda, so login() runs directly
-            // without launching a new coroutine. It logs in with the development token.
-            // https://docs.ditto.live/sdk/latest/auth-and-authorization
+            // Authenticate before sync starts: supply a fresh token whenever the
+            // current one is missing or near expiry. Rethrow CancellationException
+            // so coroutine cancellation propagates instead of being logged as an
+            // auth failure. https://docs.ditto.live/sdk/latest/auth-and-authorization
             ditto.auth?.expirationHandler = { expiredDitto, _ ->
-                expiredDitto.auth?.login(DEVELOPMENT_TOKEN, DittoAuthenticationProvider.development())
+                try {
+                    expiredDitto.auth?.login(DEVELOPMENT_TOKEN, DittoAuthenticationProvider.development())
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    Log.e(TAG, "Authentication failed: ${e.message}")
+                }
             }
 
             // DQL strict mode is off, so objects are treated as CRDT MAPs and
             // non-REGISTER types like COUNTER don't require collection definitions
             // on UPDATE/SELECT. https://docs.ditto.live/dql/strict-mode
 
-            // start sync
+            // start sync — @Throws, so guard it (rethrowing cancellation) rather
+            // than letting a failure take down the caller.
             // https://docs.ditto.live/sdk/latest/sync/start-and-stop-sync
             ditto.sync.start()
-
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Throwable) {
-            e.localizedMessage?.let { Log.e(e.message, it) }
+            Log.e(TAG, "Failed to start sync: ${e.message}")
         }
 
         observeItems()
@@ -151,11 +166,11 @@ object DittoManager {
                         itemUpdateListener.setInitial(itemsForView.toMutableList())
                     }
                 } else {
-                    diff.updates.forEach { index ->
-                        val count = result.items[index].value["counter"].intOrNull ?: 0
-                        withContext(Dispatchers.Main) {
-                            itemUpdateListener.updateCount(index, count)
-                        }
+                    // Extract counts while the query result is open, then dispatch
+                    // once — avoids suspending the handler per updated item.
+                    val counts = diff.updates.map { it to (result.items[it].value["counter"].intOrNull ?: 0) }
+                    withContext(Dispatchers.Main) {
+                        counts.forEach { (index, count) -> itemUpdateListener.updateCount(index, count) }
                     }
                 }
             }
