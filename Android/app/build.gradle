@@ -2,12 +2,9 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
-// Reads a value from the shared repo-root .env — the single source of truth for
-// Ditto credentials across the iOS and Android apps. Values are unquoted. Fails
-// the build with a clear message when the file or key is missing or blank, so a
-// stale .env (the v4->v5 upgrade case, where the old keys are absent) or a
-// half-filled .env.template breaks at configuration time instead of writing a
-// bad value ("null" or "") into BuildConfig that then fails opaquely inside the SDK.
+// Reads a value from the shared repo-root .env (the single source of truth for
+// Ditto credentials across both apps; values are unquoted). Fails the build with
+// a clear message when the file or key is missing or blank.
 def dittoEnv(String key) {
     def envFile = rootProject.file("../.env")
     if (!envFile.isFile()) {
@@ -56,6 +53,7 @@ android {
     }
 
     buildFeatures {
+        buildConfig true
         viewBinding true
         compose true
     }

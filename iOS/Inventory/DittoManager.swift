@@ -70,10 +70,8 @@ final class DittoManager {
             // https://docs.ditto.live/sdk/latest/install-guides/swift
             precondition(!Env.DITTO_DATABASE_ID.isEmpty, "DITTO_DATABASE_ID is missing. Set it in .env before building.")
             precondition(!Env.DITTO_DEVELOPMENT_TOKEN.isEmpty, "DITTO_DEVELOPMENT_TOKEN is missing. Set it in .env before building.")
-            // Require a scheme — URL(string:) accepts scheme-less input like
-            // "my-app.cloud.ditto.live", which then fails opaquely inside the SDK.
-            guard let serverURL = URL(string: Env.DITTO_SERVER_URL), serverURL.scheme != nil else {
-                fatalError("DITTO_SERVER_URL is invalid: \"\(Env.DITTO_SERVER_URL)\" — include the scheme, e.g. https://<your-app>.cloud.ditto.live.")
+            guard let serverURL = URL(string: Env.DITTO_SERVER_URL), serverURL.scheme == "https" else {
+                fatalError("DITTO_SERVER_URL must be an https:// URL (the v5 portal \"Connect via SDK\" URL): \"\(Env.DITTO_SERVER_URL)\"")
             }
             let config = DittoConfig(
                 databaseID: Env.DITTO_DATABASE_ID,

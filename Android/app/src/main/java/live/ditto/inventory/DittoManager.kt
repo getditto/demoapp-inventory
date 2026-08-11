@@ -32,17 +32,12 @@ object DittoManager {
     internal suspend fun startDitto() {
         DittoLogger.minimumLogLevel = DittoLogLevel.Debug
 
-        // Defensive backstop only: build-time credential validation lives in
-        // app/build.gradle (dittoEnv), which fails the build with a clear message
-        // when a credential is missing. These guards catch a present-but-empty
-        // value, and verify the server URL carries a scheme — Connect.Server
-        // accepts a scheme-less string that then fails opaquely inside the SDK.
         // https://docs.ditto.live/sdk/latest/install-guides/kotlin
         require(DATABASE_ID.isNotBlank()) { "DITTO_DATABASE_ID is missing — set it in the repo-root .env before building." }
         require(DEVELOPMENT_TOKEN.isNotBlank()) { "DITTO_DEVELOPMENT_TOKEN is missing — set it in the repo-root .env before building." }
         require(BuildConfig.DITTO_SERVER_URL.isNotBlank()) { "DITTO_SERVER_URL is missing — set it in the repo-root .env before building." }
-        require("://" in BuildConfig.DITTO_SERVER_URL) {
-            "DITTO_SERVER_URL is invalid: \"${BuildConfig.DITTO_SERVER_URL}\" — include the scheme, e.g. https://<your-app>.cloud.ditto.live."
+        require(BuildConfig.DITTO_SERVER_URL.startsWith("https://")) {
+            "DITTO_SERVER_URL must be an https:// URL (the v5 portal \"Connect via SDK\" URL): \"${BuildConfig.DITTO_SERVER_URL}\""
         }
         val ditto = DittoFactory.create(
             DittoConfig(

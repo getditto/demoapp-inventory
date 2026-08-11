@@ -17,6 +17,11 @@ if [ $# -ne 2 ]; then
   exit 1
 fi
 
+if [ ! -f "$1" ]; then
+  echo "Ditto .env not found at \"$1\". Copy .env.template to .env at the repo root and fill it in." 1>&2
+  exit 1
+fi
+
 if [ -f "$1" ]; then
     while IFS='' read -r line || [[ -n "$line" ]]; do
         line="${line//[$'\r\n']}"
