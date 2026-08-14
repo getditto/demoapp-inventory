@@ -11,6 +11,9 @@ import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
 import androidx.core.content.pm.PackageInfoCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 
 class DittoInfoListActivity : AppCompatActivity() {
 
@@ -30,13 +33,20 @@ class DittoInfoListActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         title = "Ditto Info"
 
+        listView = findViewById(R.id.ditto_info_list_view)
+        ViewCompat.setOnApplyWindowInsetsListener(listView) { view, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.updatePadding(top = insets.top)
+            windowInsets
+        }
+
         val info = applicationContext.packageManager.getPackageInfo(application.packageName, PackageManager.GET_ACTIVITIES)
         val version = PackageInfoCompat.getLongVersionCode(info).toString()
         val appVersionTextView = findViewById<TextView>(R.id.app_version_text_view)
         appVersionTextView.text = "App Version: $version"
 
         listView = findViewById(R.id.ditto_info_list_view)
-        val items = arrayOf("Ditto SDK Info")
+        val items = arrayOf("Ditto SDK Detail")
         val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, items)
         listView.adapter = adapter
         listView.setOnItemClickListener { _, _, position, _ ->

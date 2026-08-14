@@ -52,8 +52,8 @@ final class DittoManager {
     /// - Stopping the Ditto sync process
     ///
     deinit {
-        if ditto.isSyncActive {
-            ditto.stopSync()
+        if ditto.sync.isActive {
+            ditto.sync.stop()
         }
         subscription?.cancel()
         subscription = nil
@@ -65,29 +65,40 @@ final class DittoManager {
         DittoLogger.minimumLogLevel = .debug
 
         do {
-            // Initialize Ditto
-            // https://docs.ditto.live/sdk/latest/install-guides/swift#integrating-and-initializing-sync
-            ditto = Ditto(
-                identity:
-                    .onlinePlayground(
-                        appID: Env.DITTO_APP_ID,
-                        token: Env.DITTO_PLAYGROUND_TOKEN,
-                        enableDittoCloudSync: false
-                    )
-            )
-
-            // Disable sync with V3 Ditto
-            try ditto.disableSyncWithV3()
-            Task {
-                // disable strict mode - allows for DQL with counters and objects as CRDT maps, must be called before startSync
-                // https://docs.ditto.live/dql/strict-mode
-                try await ditto.store.execute(
-                    query: "ALTER SYSTEM SET DQL_STRICT_MODE = false"
-                )
-                try ditto.startSync()
+            // Initialize Ditto — fail fast with a clear message if any credential is
+            // missing, since these are build-time .env values.
+            // https://docs.ditto.live/sdk/latest/install-guides/swift
+            precondition(!Env.DITTO_DATABASE_ID.isEmpty, "DITTO_DATABASE_ID is missing. Set it in .env before building.")
+            precondition(!Env.DITTO_DEVELOPMENT_TOKEN.isEmpty, "DITTO_DEVELOPMENT_TOKEN is missing. Set it in .env before building.")
+            guard let serverURL = URL(string: Env.DITTO_SERVER_URL), serverURL.scheme == "https" else {
+                fatalError("DITTO_SERVER_URL must be an https:// URL (the v5 portal \"Connect via SDK\" URL): \"\(Env.DITTO_SERVER_URL)\"")
             }
+            let config = DittoConfig(
+                databaseID: Env.DITTO_DATABASE_ID,
+                connect: .server(url: serverURL)
+            )
+            ditto = try Ditto.openSync(config: config)
+
+            // The expiration handler logs in with the development token on initial
+            // auth and ahead of token expiry.
+            // https://docs.ditto.live/sdk/latest/auth-and-authorization
+            ditto.auth?.expirationHandler = { expiredDitto, _ in
+                expiredDitto.auth?.login(
+                    token: Env.DITTO_DEVELOPMENT_TOKEN,
+                    provider: .development
+                ) { _, error in
+                    if let error {
+                        print("Ditto auth failed: \(error)")
+                    }
+                }
+            }
+
+            // DQL strict mode is off, so objects are treated as CRDT MAPs and
+            // non-REGISTER types like COUNTER don't require collection definitions
+            // on UPDATE/SELECT. https://docs.ditto.live/dql/strict-mode
+            try ditto.sync.start()
         } catch {
-            let dittoErr = (error as? DittoSwiftError)?.errorDescription
+            let dittoErr = (error as? DittoError)?.errorDescription
             assertionFailure(dittoErr ?? error.localizedDescription)
         }
     }
@@ -101,38 +112,48 @@ final class DittoManager {
 
 extension DittoManager {
 
-    /// Subscribes to all inventory items in the "inventories" collection.
+    /// Subscribes to all inventory items in the "inventory" collection.
     ///
-    /// This method registers a subscription to the "inventories" collection using a DQL query.
+    /// This method registers a subscription to the "inventory" collection using a DQL query.
     /// It also sets up an observer to monitor changes in the database, calculating the differences
     /// between syncs using a DittoDiffer. The observer sends updates to the `itemsUpdated` subject
     /// based on the type of change (initial load or update).
     ///
     /// - Note: This method should be called to start monitoring inventory items for changes.
     func subscribeAllInventoryItems() {
-        let query = "SELECT * FROM inventories"
+        let query = "SELECT * FROM inventory"
+
+        // Register the subscription in its own do/catch: it drives sync, but a
+        // failure here must not skip the observer below, which is a purely local
+        // read of whatever is already in the store.
+        // https://docs.ditto.live/sdk/latest/sync/syncing-data#creating-subscriptions
         do {
-            // Create Subscription
-            // https://docs.ditto.live/sdk/latest/sync/syncing-data#creating-subscriptions
-            self.subscription = try ditto.sync.registerSubscription(
-                query: query
-            )
+            self.subscription = try ditto.sync.registerSubscription(query: query)
+        } catch {
+            print("Failed to register subscription: \(error)")
+        }
 
-            // DittoDiffer - used to calculate the delta changes between syncs
-            // https://docs.ditto.live/sdk/latest/crud/read#diffing-results
-            let dittoDiffer = DittoDiffer()
+        // DittoDiffer - used to calculate the delta changes between syncs
+        // https://docs.ditto.live/sdk/latest/crud/read#diffing-results
+        let dittoDiffer = DittoDiffer()
 
-            // Register Observer to see changes in the database from sync
-            // https://docs.ditto.live/sdk/latest/crud/observing-data-changes
+        // Register Observer to see changes in the database from sync
+        // https://docs.ditto.live/sdk/latest/crud/observing-data-changes
+        do {
             storeObserver = try ditto.store.registerObserver(query: query) {
                 [weak self] results in
-                
+
                 do {
-                    let decoder = JSONDecoder()
-                    let allItems = try results.items.compactMap{ try decoder.decode(ItemDittoModel.self, from: $0.jsonData()) }
-                    self?.models.items = allItems
                     let diff = dittoDiffer.diff(results.items)
-                    
+                    let decoder = JSONDecoder()
+                    let allItems = try results.items.compactMap { item -> ItemDittoModel? in
+                        let model = try decoder.decode(ItemDittoModel.self, from: item.jsonData())
+                        // Free native memory backing the result item — do not use it after this.
+                        item.dematerialize()
+                        return model
+                    }
+                    self?.models.items = allItems
+
                     // NOTE:  if you are curious on why we don't handle deletions - the app code
                     // currently does not allow deleting of inventory items, so there is no reason to handle
                     // checking the count of deletions.
@@ -162,21 +183,25 @@ extension DittoManager {
         }
     }
 
-    /// Prepopulates the "inventories" collection with new items if they do not already exist.
+    /// Prepopulates the "inventory" collection with new items if they do not already exist.
     ///
-    /// This method executes a DQL query to insert new documents into the "inventories" collection.
-    /// It uses the "INSERT INTO inventories INTIAL DOCUMENTS" statement to ensure that the documents
-    /// are only inserted if they do not already exist, matching the behavior of `.insertDefaultIfAbsent`.
+    /// This method executes a DQL query to insert new documents into the "inventory" collection.
+    /// It uses INITIAL DOCUMENTS to ensure that the documents are only inserted if they do not
+    /// already exist. The COUNTER type declaration ensures the counter field is created as a
+    /// COUNTER CRDT (not a REGISTER), which supports INCREMENT operations and is compatible
+    /// with the MongoDB connector.
+    /// https://docs.ditto.live/dql/types-and-definitions
     ///
     /// - Parameter itemIds: An array of integers representing the IDs of the items to be inserted.
     func prepopulateItemsIfAbsent(itemIds: [Int]) {
 
-        // CREATE new items using the INSERT INTO xxx INTIAL statement
+        // INSERT with COUNTER type declaration — the collection definition is required on INSERT
+        // so the counter field is created as a COUNTER CRDT, not a plain REGISTER.
         // https://docs.ditto.live/dql/insert#insert-with-initial-documents
-        let query = "INSERT INTO inventories INITIAL DOCUMENTS (:item)"
+        let query = "INSERT INTO COLLECTION inventory (counter COUNTER) INITIAL DOCUMENTS (:item)"
 
         Task {
-            // Create a transaction to run inserts into with DQL - this is the equivalent to scoped transaction using store.write
+            // Run the inserts inside a single DQL transaction.
             // https://docs.ditto.live/sdk/latest/crud/transactions
             do {
                 try await ditto.store.transaction { transaction in
@@ -188,12 +213,12 @@ extension DittoManager {
                                     "item":
                                         [
                                             "_id": itemId,
-                                            "counter": 0.0
+                                            "counter": 0
                                         ]
                                 ]
                             )
                         } catch {
-                            let dittoErr = (error as? DittoSwiftError)?
+                            let dittoErr = (error as? DittoError)?
                                 .errorDescription
                             assertionFailure(
                                 dittoErr ?? error.localizedDescription
@@ -204,7 +229,7 @@ extension DittoManager {
                     return .commit
                 }
             } catch {
-                let dittoErr = (error as? DittoSwiftError)?
+                let dittoErr = (error as? DittoError)?
                     .errorDescription
                 assertionFailure(dittoErr ?? error.localizedDescription)
             }
@@ -212,15 +237,16 @@ extension DittoManager {
     }
 
     func incrementCounterFor(id: Int) {
-        // UPDATE Counter using DQL PN_INCREMENT function
-        // TODO insert URL to documentation link
+        // Increment the COUNTER using APPLY — no collection definition needed on UPDATE
+        // with DQL_STRICT_MODE = false (https://docs.ditto.live/dql/strict-mode)
+        // https://docs.ditto.live/dql/types-and-definitions
         let query =
-            "UPDATE inventories APPLY counter PN_INCREMENT BY 1.0 WHERE _id = :id"
+            "UPDATE inventory APPLY counter INCREMENT BY 1 WHERE _id = :id"
         Task {
             do {
                 try await ditto.store.execute(query: query, arguments: ["id": id])
             } catch {
-                let dittoErr = (error as? DittoSwiftError)?
+                let dittoErr = (error as? DittoError)?
                     .errorDescription
                 assertionFailure(dittoErr ?? error.localizedDescription)
             }
@@ -228,15 +254,16 @@ extension DittoManager {
     }
 
     func decrementCounterFor(id: Int) {
-        // UPDATE Counter using DQL PN_INCREMENT function
-        // TODO insert URL to documentation link
+        // Decrement the COUNTER using APPLY — no collection definition needed on UPDATE
+        // with DQL_STRICT_MODE = false (https://docs.ditto.live/dql/strict-mode)
+        // https://docs.ditto.live/dql/types-and-definitions
         let query =
-            "UPDATE inventories APPLY counter PN_INCREMENT BY -1.0 WHERE _id = :id"
+            "UPDATE inventory APPLY counter INCREMENT BY -1 WHERE _id = :id"
         Task {
             do {
                 try await ditto.store.execute(query: query, arguments: ["id": id])
             } catch {
-                let dittoErr = (error as? DittoSwiftError)?
+                let dittoErr = (error as? DittoError)?
                     .errorDescription
                 assertionFailure(dittoErr ?? error.localizedDescription)
             }

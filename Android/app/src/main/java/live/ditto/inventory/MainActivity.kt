@@ -23,8 +23,11 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.launch
-import live.ditto.transports.DittoSyncPermissions
+import com.ditto.kotlin.transports.DittoSyncPermissions
 import java.util.Locale
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 
 class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
     private lateinit var recyclerView: RecyclerView
@@ -35,12 +38,22 @@ class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+        ViewCompat.setOnApplyWindowInsetsListener(recyclerView) { view, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.updatePadding(
+                top = insets.top,
+                bottom = insets.bottom
+            )
+            windowInsets
+        }
+
         checkLocationPermission()
 
         DittoManager.itemUpdateListener = this
 
         lifecycleScope.launch {
-            DittoManager.startDitto(applicationContext)
+            DittoManager.startDitto()
         }
 
         setupLayout()
@@ -105,7 +118,7 @@ class MainActivity : AppCompatActivity(), DittoManager.ItemUpdateListener {
     }
 
     private fun showInformationView() {
-        val intent = DittoManager.sdkVersion?.let { DittoInfoListActivity.createIntent(this, it) }
+        val intent = DittoInfoListActivity.createIntent(this, DittoManager.sdkVersion)
         startActivity(intent)
     }
 

@@ -1,9 +1,10 @@
 package live.ditto.inventory
 
-import android.content.Context
 import android.util.Log
-import live.ditto.*
-import live.ditto.android.DefaultAndroidDittoDependencies
+import com.ditto.kotlin.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object DittoManager {
     /* Interfaces */
@@ -19,36 +20,60 @@ object DittoManager {
     var ditto: Ditto? = null; private set
 
     /* Private properties */
+    private const val TAG = "DittoManager"
     private var subscription: DittoSyncSubscription? = null
     private var observer: DittoStoreObserver? = null
 
     // Those values should be pasted in 'gradle.properties'. See the notion page for more details.
-    private const val APP_ID = BuildConfig.DITTO_APP_ID
-    private const val ONLINE_AUTH_TOKEN = BuildConfig.DITTO_PLAYGROUND_TOKEN
+    private const val DATABASE_ID = BuildConfig.DITTO_DATABASE_ID
+    private const val DEVELOPMENT_TOKEN = BuildConfig.DITTO_DEVELOPMENT_TOKEN
 
     /* Internal functions and properties */
-    internal suspend fun startDitto(context: Context) {
-        DittoLogger.minimumLogLevel = DittoLogLevel.DEBUG
+    internal suspend fun startDitto() {
+        DittoLogger.minimumLogLevel = DittoLogLevel.Debug
 
-        val dependencies = DefaultAndroidDittoDependencies(context)
-        ditto = Ditto(dependencies, DittoIdentity.OnlinePlayground(dependencies, APP_ID, ONLINE_AUTH_TOKEN, false))
+        // https://docs.ditto.live/sdk/latest/install-guides/kotlin
+        require(DATABASE_ID.isNotBlank()) { "DITTO_DATABASE_ID is missing — set it in the repo-root .env before building." }
+        require(DEVELOPMENT_TOKEN.isNotBlank()) { "DITTO_DEVELOPMENT_TOKEN is missing — set it in the repo-root .env before building." }
+        require(BuildConfig.DITTO_SERVER_URL.isNotBlank()) { "DITTO_SERVER_URL is missing — set it in the repo-root .env before building." }
+        require(BuildConfig.DITTO_SERVER_URL.startsWith("https://")) {
+            "DITTO_SERVER_URL must be an https:// URL (the v5 portal \"Connect via SDK\" URL): \"${BuildConfig.DITTO_SERVER_URL}\""
+        }
+        val ditto = DittoFactory.create(
+            DittoConfig(
+                databaseId = DATABASE_ID,
+                connect = DittoConfig.Connect.Server(BuildConfig.DITTO_SERVER_URL)
+            )
+        )
+        this.ditto = ditto
 
         try {
-            ditto?.let {
-                // Disable sync with V3 Ditto
-                it.disableSyncWithV3()
-
-                // disable strict mode - allows for DQL with counters and objects as CRDT maps, must be called before startSync
-                // https://docs.ditto.live/dql/strict-mode 
-                it.store.execute("ALTER SYSTEM SET DQL_STRICT_MODE = false")
-
-                // start sync
-                // https://docs.ditto.live/sdk/latest/sync/start-and-stop-sync
-                it.startSync()
+            // Authenticate before sync starts: supply a fresh token whenever the
+            // current one is missing or near expiry. Rethrow CancellationException
+            // so coroutine cancellation propagates instead of being logged as an
+            // auth failure. https://docs.ditto.live/sdk/latest/auth-and-authorization
+            ditto.auth?.expirationHandler = { expiredDitto, _ ->
+                try {
+                    expiredDitto.auth?.login(DEVELOPMENT_TOKEN, DittoAuthenticationProvider.development())
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    Log.e(TAG, "Authentication failed: ${e.message}")
+                }
             }
 
+            // DQL strict mode is off, so objects are treated as CRDT MAPs and
+            // non-REGISTER types like COUNTER don't require collection definitions
+            // on UPDATE/SELECT. https://docs.ditto.live/dql/strict-mode
+
+            // start sync — @Throws, so guard it (rethrowing cancellation) rather
+            // than letting a failure take down the caller.
+            // https://docs.ditto.live/sdk/latest/sync/start-and-stop-sync
+            ditto.sync.start()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Throwable) {
-            e.localizedMessage?.let { Log.e(e.message, it) }
+            Log.e(TAG, "Failed to start sync: ${e.message}")
         }
 
         observeItems()
@@ -56,9 +81,10 @@ object DittoManager {
     }
 
     internal suspend fun increment(itemId: Int) {
-        // UPDATE Counter using DQL PN_INCREMENT function
-        // TODO insert URL to documentation link
-        val query = "UPDATE inventories APPLY counter PN_INCREMENT BY 1.0 WHERE _id = :id"
+        // Increment the COUNTER using APPLY — no collection definition needed on UPDATE
+        // with DQL_STRICT_MODE = false (https://docs.ditto.live/dql/strict-mode)
+        // https://docs.ditto.live/dql/types-and-definitions
+        val query = "UPDATE inventory APPLY counter INCREMENT BY 1 WHERE _id = :id"
         try {
             ditto?.store?.execute(query,
                 mapOf("id" to itemId))
@@ -68,9 +94,10 @@ object DittoManager {
     }
 
     internal suspend fun decrement(itemId: Int) {
-        // UPDATE Counter using DQL PN_INCREMENT function
-        // TODO insert URL to documentation link
-        val query = "UPDATE inventories APPLY counter PN_INCREMENT BY -1.0 WHERE _id = :id"
+        // Decrement the COUNTER using APPLY — no collection definition needed on UPDATE
+        // with DQL_STRICT_MODE = false (https://docs.ditto.live/dql/strict-mode)
+        // https://docs.ditto.live/dql/types-and-definitions
+        val query = "UPDATE inventory APPLY counter INCREMENT BY -1 WHERE _id = :id"
         try {
             ditto?.store?.execute(query,
                 mapOf("id" to itemId))
@@ -79,51 +106,49 @@ object DittoManager {
         }
     }
 
-    internal val sdkVersion: String?
-        get() = ditto?.sdkVersion
+    internal val sdkVersion: String
+        get() = Ditto.VERSION
 
 
     /* Private functions and properties */
     private suspend fun insertDefaultDataIfAbsent() {
-        // CREATE new items using the INSERT INTO xxx INTIAL statement
+        // INSERT with COUNTER type declaration — the collection definition is required on INSERT
+        // so the counter field is created as a COUNTER CRDT, not a plain REGISTER.
         // https://docs.ditto.live/dql/insert#insert-with-initial-documents
-        val query = "INSERT INTO inventories INITIAL DOCUMENTS (:item)"
+        // https://docs.ditto.live/dql/types-and-definitions
+        val query = "INSERT INTO COLLECTION inventory (counter COUNTER) INITIAL DOCUMENTS (:item)"
 
-        // Create a transaction to run inserts into with DQL - this is the equivalent to scoped transaction using store.write
+        // Run the inserts inside a single DQL transaction.
         // https://docs.ditto.live/sdk/latest/crud/transactions
-        ditto?.store?.transaction {
-             try {
-                 for (viewItem in itemsForView) {
-                     it.execute(query,
-                         mapOf("item" to
-                                 mapOf("_id" to viewItem.itemId,
-                                     "counter" to 0.0)
-                         )
-                     )
-                 }
-             } catch (e: Throwable){
-                 e.localizedMessage?.let { Log.e(e.message, it) }
-                 DittoTransactionCompletionAction.Rollback
-             }
-            DittoTransactionCompletionAction.Commit
+        ditto?.store?.transaction { transaction ->
+            try {
+                for (viewItem in itemsForView) {
+                    transaction.execute(query,
+                        mapOf("item" to
+                                mapOf("_id" to viewItem.itemId,
+                                    "counter" to 0)
+                        )
+                    )
+                }
+                DittoTransaction.Result.Commit(Unit)
+            } catch (e: Throwable) {
+                e.localizedMessage?.let { Log.e(e.message, it) }
+                DittoTransaction.Result.Rollback
+            }
         }
     }
 
     private fun observeItems() {
-        val query = "SELECT * FROM inventories"
+        val query = "SELECT * FROM inventory"
         ditto?.let {
             // Create Subscription
             // https://docs.ditto.live/sdk/latest/sync/syncing-data#creating-subscriptions
             subscription = it.sync.registerSubscription(query)
 
-            // DittoDiffer - used to calculate the delta changes between syncs
-            // https://docs.ditto.live/sdk/latest/crud/read#diffing-results
-            val dittoDiffer = DittoDiffer()
-
-            // Register Observer to see changes in the database from sync
+            // Register Observer to see changes in the database from sync. The observer
+            // delivers a DittoDiff with the delta changes between syncs.
             // https://docs.ditto.live/sdk/latest/crud/observing-data-changes
-            observer = it.store.registerObserver(query) { results ->
-                val diff = dittoDiffer.diff(results.items)
+            observer = it.store.registerObserver(query) { result, diff ->
 
                 // NOTE:  if you are curious on why we don't handle deletions - the app code
                 // currently does not allow deleting of inventory items, so there is no reason to handle
@@ -132,12 +157,15 @@ object DittoManager {
                 // if the insertions count is greater than zero and others are empty
                 // assume initial load
                 if (diff.insertions.isNotEmpty() && diff.deletions.isEmpty() && diff.updates.isEmpty()) {
-                   itemUpdateListener.setInitial(itemsForView.toMutableList())
+                    withContext(Dispatchers.Main) {
+                        itemUpdateListener.setInitial(itemsForView.toMutableList())
+                    }
                 } else {
-                    diff.updates.forEach { index ->
-                        val doc = results.items[index].value
-                        val count = doc["counter"] as Float
-                        itemUpdateListener.updateCount(index, count.toInt())
+                    // Extract counts while the query result is open, then dispatch
+                    // once — avoids suspending the handler per updated item.
+                    val counts = diff.updates.map { it to (result.items[it].value["counter"].intOrNull ?: 0) }
+                    withContext(Dispatchers.Main) {
+                        counts.forEach { (index, count) -> itemUpdateListener.updateCount(index, count) }
                     }
                 }
             }
