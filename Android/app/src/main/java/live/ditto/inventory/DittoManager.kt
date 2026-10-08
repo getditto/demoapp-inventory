@@ -157,8 +157,20 @@ object DittoManager {
                 // if the insertions count is greater than zero and others are empty
                 // assume initial load
                 if (diff.insertions.isNotEmpty() && diff.deletions.isEmpty() && diff.updates.isEmpty()) {
+                    val initialItems = diff.insertions.map { index ->
+                        val viewItem = itemsForView[index]
+                        val count = result.items[index].value["counter"].intOrNull ?: 0
+                        ItemModel(
+                            viewItem.itemId,
+                            viewItem.image,
+                            viewItem.title,
+                            viewItem.price,
+                            viewItem.detail,
+                            count
+                        )
+                    }
                     withContext(Dispatchers.Main) {
-                        itemUpdateListener.setInitial(itemsForView.toMutableList())
+                        itemUpdateListener.setInitial(initialItems)
                     }
                 } else {
                     // Extract counts while the query result is open, then dispatch
