@@ -85,7 +85,7 @@ androidComponents {
 }
 
 dependencies {
-    implementation("com.ditto:ditto-kotlin:5.1.0")
+    implementation("com.ditto:ditto-kotlin:5.2.0")
 
     // Ditto Tools
     implementation "com.ditto:ditto-tools-android:6.0.0"
